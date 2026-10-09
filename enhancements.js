@@ -1,7 +1,7 @@
 (()=>{
 const el=id=>document.getElementById(id),today=()=>day(new Date());
 const css=document.createElement('style');css.textContent='.kylo-action{width:100%;background:none;border:0;text-align:left;font:inherit;color:inherit}.kylo-overlay{position:fixed;inset:0;background:#0008;z-index:999;display:flex;align-items:end;justify-content:center}.kylo-overlay[hidden]{display:none}.kylo-panel{background:#fff;border-radius:22px 22px 0 0;padding:20px;width:min(100%,450px);max-height:90dvh;overflow:auto}.kylo-panel label{display:block;margin:12px 0}.kylo-panel .input{width:100%;margin-top:5px}.kylo-danger{background:#fff0f0;color:#a33;border:1px solid #ecc;border-radius:12px;padding:12px;width:100%}';document.head.appendChild(css);
-const backup=document.createElement('div');backup.innerHTML='<button class="option" id="kyloBackup">💾 Stáhnout zálohu dat</button><p class="sub" id="kyloBackupStatus"></p>';backup.hidden=true;el('appVersion').before(backup);
+const backup=el('kyloBackup');
 const overlay=document.createElement('div');overlay.className='kylo-overlay';overlay.hidden=true;overlay.innerHTML='<div class="kylo-panel"><button class="option" id="kyloClose">Zavřít ×</button><h2 id="kyloTitle"></h2><div id="kyloBody"></div></div>';document.body.appendChild(overlay);el('kyloClose').onclick=()=>overlay.hidden=true;
 const request=async(action,method,body)=>{const r=await fetch('/api/care?action='+action,{method,credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const x=await r.json();if(!r.ok)throw Error(x.error||'Chyba');return x};
 const eventsNow=()=>events();
