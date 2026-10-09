@@ -16,8 +16,8 @@ module.exports=async(req,res)=>{
     const b=req.body||{};
     if(req.method==='DELETE'){
       if(!uuid(b.id))return send(res,400,{error:'Neplatné ID akce'});
-      const rows=await db.query("UPDATE care_types SET is_active=false WHERE id=$1 AND slug LIKE 'custom-%' AND is_active=true RETURNING id",[b.id]);
-      return send(res,rows.length?200:404,rows.length?{ok:true}:{error:'Vlastní akce nebyla nalezena nebo už je odstraněná'});
+      const rows=await db.query("UPDATE care_types SET is_active=false WHERE id=$1 AND is_active=true RETURNING id",[b.id]);
+      return send(res,rows.length?200:404,rows.length?{ok:true}:{error:'Akce nebyla nalezena nebo už je odstraněná'});
     }
     let value;try {value=settings(b)} catch(e){return send(res,400,{error:e.message})}
     const {name,dose,interval,reminders}=value;

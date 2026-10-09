@@ -19,7 +19,7 @@ async function call(handler,action,body={},method='POST'){const res={code:200,st
  r=await call('care','record',{id:recordId,type:type.slug,date:'2026-10-01',product:'Isolated record',dose:'sample',weight:null,nextDue:'2026-10-08',notes:'Edited after removal'},'PUT');assert.equal(r.code,200);
  r=await call('care','complete',{id:planId,date:'2026-10-20'});assert.equal(r.code,200);
  const [completed]=await db.query('SELECT p.status,r.care_type_id FROM planned_events p JOIN care_records r ON r.id=p.completed_record_id WHERE p.id=$1',[planId]);assert.deepEqual(completed,{status:'completed',care_type_id:id});
- const [base]=await db.query("SELECT id,is_active FROM care_types WHERE slug='weight'");r=await call('actions','',{id:base.id},'DELETE');assert.equal(r.code,404);
- assert.deepEqual((await db.query('SELECT is_active FROM care_types WHERE id=$1',[base.id]))[0],{is_active:base.is_active});
- console.log('PASS: actual API and isolated database preserve records and plans after removal, allow editing and completion, and protect built-in actions.');
+ const [base]=await db.query("SELECT id,is_active FROM care_types WHERE slug='weight'");r=await call('actions','',{id:base.id},'DELETE');assert.equal(r.code,base.is_active?200:404);
+ assert.deepEqual((await db.query('SELECT is_active FROM care_types WHERE id=$1',[base.id]))[0],{is_active:false});
+ console.log('PASS: actual API and isolated database preserve records and plans after removal, allow editing and completion, and support removing existing actions.');
 })().catch(e=>{console.error(e.message);process.exitCode=1});
