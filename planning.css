@@ -51,3 +51,41 @@ button:focus-visible{outline:3px solid #799575;outline-offset:3px}
 .calendar-heading .calendar-today{border:1px solid #cbdcca;background:#edf4e8;color:#315d42;border-radius:20px;padding:6px 15px;min-height:34px;font-size:12px;font-weight:700;cursor:pointer}
 .month .day.today{background:#e7efdf;box-shadow:inset 0 0 0 2px #54775b;font-weight:800}
 .month .day.today.selected{background:#315d42;color:#fff;box-shadow:inset 0 0 0 2px #315d42,inset 0 0 0 4px #c4d6bf}
+/* Homepage: a single, data-driven next-care summary. */
+.home-header{margin:4px 5px 26px}
+.home-date{font-size:13px;color:#808879;letter-spacing:.1px}
+.home-welcome{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:14px}
+.home-welcome>div{min-width:0;flex:1}
+.home-welcome h1{font-size:34px;letter-spacing:-1.3px;line-height:1.15;margin:0 0 7px;font-weight:750}
+.home-welcome p{margin:0;font-size:13px;color:#77836f;line-height:1.5;text-wrap:balance}
+.home-portrait{width:76px;height:76px;object-fit:cover;border-radius:24px;outline:1px solid #d8e2d0;outline-offset:5px;box-shadow:0 8px 20px #26392912;flex:none}
+.home-care{background:linear-gradient(135deg,#335a42,#244333);border-radius:27px;color:#fff;box-shadow:0 12px 30px #233c2824;position:relative;overflow:hidden;margin-bottom:22px}
+.home-care:before,.home-care:after{content:'';position:absolute;right:-80px;top:-90px;width:235px;height:235px;border:1px solid #a2bc9c18;border-radius:50%;pointer-events:none}
+.home-care:after{right:-48px;top:-58px;width:171px;height:171px;border-color:#a2bc9c16}
+.home-care-main{display:block;width:100%;background:transparent;border:0;color:inherit;text-align:left;font:inherit;padding:22px 22px 0;position:relative;z-index:1;cursor:pointer}
+.home-care-main:disabled{cursor:default}
+.home-care-main:focus-visible{outline:3px solid #d4e4bf;outline-offset:-6px;border-radius:27px 27px 0 0}
+.home-care-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.home-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1.7px;font-weight:650;color:#d0dec6}
+.home-countdown{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;border:1px solid #bed3b532;border-radius:30px;background:#aac49814;padding:7px 10px;white-space:nowrap;color:#e0eacc}
+.home-countdown:before{content:'';width:5px;height:5px;background:#bfd49d;border-radius:50%;flex:none}
+.home-care.overdue .home-countdown{color:#ffe5ca;border-color:#e0ac793e;background:#e0ac7920}
+.home-care.overdue .home-countdown:before{background:#efc095}
+.home-care-date{font-size:38px;font-weight:650;letter-spacing:-1.3px;line-height:1.15;margin:19px 0 6px;overflow-wrap:anywhere}
+.home-weekday{font-size:12px;color:#c2d0b9;margin:0}
+.home-planned{display:flex;gap:12px;align-items:center;margin:21px 0 22px}
+.home-planned-icon{height:40px;width:40px;background:#9cb9901c;border:1px solid #bdd0b020;border-radius:13px;display:grid;place-items:center;flex:none}
+.home-planned-icon svg{width:21px;stroke:#d9e6cd;fill:none;stroke-width:1.5}
+.home-care-product{font-size:14px;font-weight:600;display:block;line-height:1.4;overflow-wrap:anywhere}
+.home-care-type{font-size:11px;color:#c0d0b8;display:block;line-height:1.5;margin-top:3px;overflow-wrap:anywhere}
+.home-care-arrow{height:33px;width:33px;background:#dce8d118;border-radius:50%;color:#e1ebd6;display:grid;place-items:center;font-size:21px;flex:none}
+#homeStats{display:grid;grid-template-columns:repeat(3,1fr);padding:17px 10px 19px;background:#ffffff06;border-top:1px solid #dce8d11c;position:relative;z-index:1}
+#homeStats div{text-align:center;border-right:1px solid #b5caa026}
+#homeStats div:last-child{border-right:0}
+#homeStats b{display:block;font-size:25px;font-weight:650;line-height:1.1;letter-spacing:-.5px;color:#f3f6ec}
+#homeStats small{display:block;font-size:10px;color:#bfcfb4;margin-top:7px}
+.home-care.empty .home-care-date{font-size:28px;letter-spacing:-.7px}
+.home-care.empty .home-weekday{margin-bottom:22px;line-height:1.5}
+@media(max-width:360px){.home-portrait{width:62px;height:62px;border-radius:20px}.home-welcome h1{font-size:30px}.home-care-main{padding:20px 17px 0}.home-care-top{flex-wrap:wrap}.home-care-date{font-size:34px}}
+
+.home-care-date,.home-weekday{display:block}

@@ -35,6 +35,11 @@ showDay=function(d){
   selectedCalendarDate=d;drawCalendar();
   document.querySelector('#monthRows .highlighted')?.scrollIntoView({block:'nearest',behavior:'smooth'});
 };
+function openNextCare(){
+  const next=events()[0];if(!next)return;
+  view=new Date(next.due+'T12:00:00');view.setDate(1);selectedCalendarDate=next.due;
+  go('calendar',document.querySelectorAll('.nav button:not(.plus)')[2]);
+}
 function goToToday(){
   const now=new Date();view=new Date(now.getFullYear(),now.getMonth(),1);
   selectedCalendarDate=day(now);drawCalendar();
