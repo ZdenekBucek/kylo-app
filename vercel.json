@@ -1,1 +1,17 @@
-{"version":2,"rewrites":[{"source":"/api","destination":"/api/index.js"}],"crons":[{"path":"/api/cron","schedule":"0 8 * * *"}],"buildCommand":"node --check app.js && node --check enhancements.js && node --test tests/*.test.js && npm run test:e2e:list && mkdir -p public && cp index.html app.js enhancements.js avatar.webp manifest.webmanifest sw.js public/","outputDirectory":"public"}
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api/index.js"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron",
+      "schedule": "0 8 * * *"
+    }
+  ],
+  "buildCommand": "node --check app.js && node --check enhancements.js && node --check planning.js && node --test tests/*.test.js && npm run test:e2e:list && mkdir -p public && cp index.html app.js enhancements.js planning.js planning.css avatar.webp manifest.webmanifest sw.js public/",
+  "outputDirectory": "public"
+}

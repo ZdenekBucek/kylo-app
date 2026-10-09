@@ -1,0 +1,47 @@
+/* Action planning and the mobile input panel share the app's quiet green palette. */
+.calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 2px 6px;font-size:12px;color:#536457;flex-wrap:wrap}
+.calendar-toolbar button{border:1px solid #cdddcf;border-radius:12px;padding:10px 12px;background:#eaf2e9;color:#315d42;font-weight:700;font-size:12px;cursor:pointer}
+.calendar-toolbar button:disabled{opacity:.5;cursor:default}
+.month .day{color:#315d42;cursor:pointer;transition:background .15s,box-shadow .15s}
+.month .day.selected{background:#315d42;color:#fff;box-shadow:0 3px 10px #315d422b}
+.month .day.selected.dot:after{background:#fff}
+#monthRows{padding:8px}
+button.month-event{border-radius:16px;padding:14px 10px!important;border-bottom:0!important;margin:3px 0;transition:background .2s,box-shadow .2s}
+button.month-event.highlighted{background:#edf4ec;box-shadow:inset 0 0 0 2px #88a38b}
+.calendar-empty{padding:8px 10px;line-height:1.5}
+.nav{height:calc(76px + env(safe-area-inset-bottom));padding:6px 8px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -6px 25px #293e2a08;z-index:3}
+.nav button{flex:1;min-height:48px;line-height:1.8;cursor:pointer}
+.nav .plus{flex:0 0 58px;border:5px solid #f8f5ee;background:#315d42!important;margin-top:-30px;height:58px;font-size:28px!important;line-height:1}
+.app{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
+.sheet{background:#17261fcc;backdrop-filter:blur(5px);z-index:1000}
+.sheetin{background:#fcfaf5;max-height:90dvh;padding:10px 20px calc(22px + env(safe-area-inset-bottom));border-radius:30px 30px 0 0;box-shadow:0 -16px 60px #13221933;overscroll-behavior:contain}
+.sheet-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.sheet-heading h2{font-size:25px;letter-spacing:-.6px;margin:4px 0 0}
+.sheet-heading .eyebrow{font-size:10px;letter-spacing:1.6px;font-weight:700;color:#62816a}
+.sheet-close{width:38px;height:38px;border:0;border-radius:50%;background:#eeeae2;color:#425547;font-size:25px;flex:none;cursor:pointer}
+.handle{width:34px;height:4px;margin-bottom:18px;background:#d8d9d0}
+#sheetIntro{margin:9px 0 18px;line-height:1.5}
+.entry-modes{display:flex;border:1px solid #e2e6db;background:#f0f1e9;padding:4px;border-radius:15px;margin:18px 0 16px;gap:4px}
+.entry-modes button{flex:1;border:0;background:transparent;border-radius:11px;padding:12px 8px;color:#6c786b;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.entry-modes button.selected{background:#fff;color:#315d42;box-shadow:0 2px 6px #273b2610}
+.action-option{display:flex;align-items:center;gap:12px;width:100%;background:#fff;border:1px solid #e7e9df;border-radius:18px;text-align:left;padding:13px;margin:8px 0;font:inherit;color:inherit;cursor:pointer;min-height:74px}
+.action-option:hover{border-color:#a6b8a0;background:#f6f9f2}
+.action-icon{flex:0 0 43px;width:43px;height:43px;background:#edf3e8;border-radius:14px;display:grid;place-items:center;font-size:23px}
+.action-option>span:nth-child(2){flex:1;min-width:0;overflow-wrap:anywhere}
+.action-option b{display:block;font-size:14px;line-height:1.4}
+.action-option small{display:block;font-size:11px;color:#7a8674;line-height:1.5;margin-top:4px}
+.option-arrow{color:#8b9b86;font-size:22px}
+#recordForm label,#actionEditor label{display:block;font-weight:600;font-size:13px;margin:15px 0 8px}
+#recordForm .input,#actionEditor .input{background:#fff;border-color:#dde2d6;font-weight:400}
+#recordForm .primary,#actionEditor .primary{margin-top:12px}
+.field-help{font-size:11px;color:#748071;line-height:1.5;margin:0 0 14px}
+.back-action{border:0;background:transparent;color:#49664d;font:inherit;font-size:13px;padding:12px 0;cursor:pointer}
+.form-error{font-size:13px;color:#a23535;line-height:1.5}
+#actionEditor{padding:14px 0 4px;border-top:1px solid #e1e8dd;margin-top:16px}
+#actionFeedback{line-height:1.5}
+.kylo-panel{padding-bottom:calc(22px + env(safe-area-inset-bottom))!important;background:#fcfaf5!important}
+button:focus-visible{outline:3px solid #799575;outline-offset:3px}
+@media(min-width:700px){.sheet{align-items:center}.sheetin{border-radius:28px}.nav{border-radius:0 0 30px 30px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+[hidden]{display:none!important}

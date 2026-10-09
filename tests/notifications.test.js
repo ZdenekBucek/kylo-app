@@ -1,0 +1,14 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),Module=require('node:module');
+process.env.DATABASE_URL='postgres://test.invalid/db';process.env.CRON_SECRET='test-secret';process.env.VAPID_PUBLIC_KEY='test';process.env.VAPID_PRIVATE_KEY='test';
+let plans=[],latest=[],preferences={},sent=[];
+const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Prague',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const future=days=>{let d=new Date(today()+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
+const db={query:async sql=>{if(sql.includes('DISTINCT ON'))return latest;if(sql.includes('FROM planned_events'))return plans;if(sql.includes('FROM push_subscriptions'))return [{user_id:'u1',endpoint:'https://push.test',p256dh:'key',auth_secret:'secret'}];if(sql.includes('FROM user_notification_settings'))return [{user_id:'u1',enabled:true,repeat_overdue:true,reminders:preferences}];return []}};
+const original=Module._load;Module._load=function(name,...rest){if(name==='@neondatabase/serverless')return {neon:()=>db};if(name==='web-push')return {setVapidDetails(){},sendNotification:async(_,payload)=>sent.push(JSON.parse(payload))};return original.call(this,name,...rest)};
+const cron=require('../api/cron');Module._load=original;
+async function invoke(){sent=[];const res={status(code){this.code=code;return this},setHeader(){return this},json(value){this.body=value;return this}};await cron({method:'GET',headers:{authorization:'Bearer test-secret'}},res);assert.equal(res.code,200);return res}
+test('custom plan sends on its own reminder offset rather than user defaults',async()=>{latest=[];plans=[{id:'p1',slug:'custom',title:'Péče',due:future(5),reminder_offsets:[5,0]}];preferences={custom:[1]};await invoke();assert.equal(sent.length,1);assert.match(sent[0].body,/za 5 dní/)});
+test('empty reminder snapshot disables overdue notifications too',async()=>{latest=[];plans=[{id:'p2',slug:'custom',title:'Bez připomínek',due:future(-1),reminder_offsets:[]}];preferences={custom:[0]};await invoke();assert.equal(sent.length,0)});
+test('legacy events keep per-user reminders and custom events have definition defaults',async()=>{plans=[];preferences={weight:[3]};latest=[{id:'r1',slug:'weight',product:'Vážení',due:future(3),reminder_offsets:null,default_reminder_offsets:[0]},{id:'r2',slug:'custom',product:'Srst',due:future(3),reminder_offsets:null,default_reminder_offsets:[3]}];await invoke();assert.equal(sent.length,2)});
+test('an explicit plan supersedes the same type and day automatic reminder',async()=>{preferences={};latest=[{id:'r1',care_type_id:'type1',slug:'custom',product:'Srst',due:today(),reminder_offsets:[0]}];plans=[{id:'p1',care_type_id:'type1',slug:'custom',title:'Srst',due:today(),reminder_offsets:[0]}];await invoke();assert.equal(sent.length,1)});
