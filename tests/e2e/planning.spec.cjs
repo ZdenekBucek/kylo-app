@@ -32,3 +32,34 @@ test('mobile panel and calendar load their styles without horizontal overflow',a
  await nav(page,'Kalendář');await page.locator('[data-date="2026-10-31"]').click();expect(await page.locator('#calendarDays [aria-pressed="true"]').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(49, 93, 66)');
  await page.getByRole('button',{name:'Přidat péči',exact:true}).click();expect(await page.locator('.action-option').first().evaluate(e=>getComputedStyle(e).display)).toBe('flex');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
+test('today stays marked when another day is selected and Today returns from other months',async({page})=>{
+ await nav(page,'Kalendář');const today=page.locator('#calendarDays [data-date="2026-10-08"]');await expect(today).toHaveAttribute('aria-current','date');await expect(today).toHaveClass(/today/);
+ await page.locator('[data-date="2026-10-31"]').click();await expect(today).toHaveAttribute('aria-current','date');await expect(today).toHaveAttribute('aria-pressed','false');
+ await page.getByRole('button',{name:'Další měsíc'}).click();await expect(page.locator('#calendarDays .today')).toHaveCount(0);
+ await page.getByRole('button',{name:'Dnes',exact:true}).click();await expect(page.locator('#monthTitle')).toContainText('říjen 2026');await expect(today).toHaveAttribute('aria-pressed','true');await expect(page.locator('#monthRows .highlighted')).toContainText('Domácí vážení');
+});
+async function swipe(page,dx,dy=0,options={}){
+ if(test.info().project.name==='desktop-chromium'&&!options.cancelled&&!options.multitouch){
+  const r=await page.locator('#calendarSurface').boundingBox(),x=r.x+r.width/2,y=r.y+r.height/2,cdp=await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
+  for(let i=1;i<=4;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+dx*i/4,y:y+dy*i/4,id:1}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();return;
+ }
+ await page.locator('#calendarSurface').evaluate((surface,{dx,dy,options})=>{
+  const r=surface.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2,p={bubbles:true,pointerId:1,pointerType:'touch',isPrimary:true,clientX:x,clientY:y};
+  surface.dispatchEvent(new PointerEvent('pointerdown',p));
+  if(options.multitouch)surface.dispatchEvent(new PointerEvent('pointerdown',{...p,pointerId:2,isPrimary:false}));
+  if(options.cancelled)surface.dispatchEvent(new PointerEvent('pointercancel',p));
+  surface.dispatchEvent(new PointerEvent('pointerup',{...p,clientX:x+dx,clientY:y+dy}));
+ },{dx,dy,options});
+}
+test('horizontal touch gestures move one month in each direction across year boundary',async({page})=>{
+ await nav(page,'Kalendář');await swipe(page,-110,5);await expect(page.locator('#monthTitle')).toContainText('listopad 2026');await expect(page.locator('#monthRows')).toContainText('Preventivní veterinární prohlídka');
+ await swipe(page,-110);await swipe(page,-110);await expect(page.locator('#monthTitle')).toContainText('leden 2027');
+ await swipe(page,110);await expect(page.locator('#monthTitle')).toContainText('prosinec 2026');await expect(page.locator('#calendarDays [aria-pressed="true"]')).toHaveCount(0);
+});
+test('scrolling, small movements, cancelled gestures and multi-touch do not change month',async({page})=>{
+ await nav(page,'Kalendář');await swipe(page,10,130);await swipe(page,20,2);await swipe(page,-110,0,{cancelled:true});await swipe(page,-110,0,{multitouch:true});await expect(page.locator('#monthTitle')).toContainText('říjen 2026');
+ expect(await page.locator('#calendarSurface').evaluate(e=>getComputedStyle(e).touchAction)).toContain('pan-y');
+ await page.locator('[data-date="2026-10-15"]').click();await expect(page.locator('[data-date="2026-10-15"]')).toHaveAttribute('aria-pressed','true');
+});

@@ -23,8 +23,8 @@ drawCalendar=function(){
   const y=view.getFullYear(),m=view.getMonth(),count=new Date(y,m+1,0).getDate(),pad=(new Date(y,m,1).getDay()+6)%7,ev=calendarEvents();
   $('monthTitle').textContent=view.toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});
   $('calendarDays').innerHTML=['Po','Út','St','Čt','Pá','So','Ne'].map(x=>'<div class="sub">'+x+'</div>').join('')+Array(pad).fill('<span></span>').join('')+Array.from({length:count},(_,i)=>{
-    const d=day(new Date(y,m,i+1)),selected=d===selectedCalendarDate;
-    return '<button class="day '+(ev.some(x=>x.due===d)?'dot ':'')+(selected?'selected':'')+'" aria-label="'+fmt(d)+'" aria-pressed="'+selected+'" data-date="'+d+'" onclick="showDay(\''+d+'\')">'+(i+1)+'</button>';
+    const d=day(new Date(y,m,i+1)),selected=d===selectedCalendarDate,isToday=d===day(new Date());
+    return '<button class="day '+(ev.some(x=>x.due===d)?'dot ':'')+(isToday?'today ':'')+(selected?'selected':'')+'" '+(isToday?'aria-current="date" ':'')+'aria-label="'+fmt(d)+(isToday?', dnes':'')+'" aria-pressed="'+selected+'" data-date="'+d+'" onclick="showDay(\''+d+'\')">'+(i+1)+'</button>';
   }).join('');
   $('calendarSelection').textContent=selectedCalendarDate?fmt(selectedCalendarDate):'Vyber den v kalendáři';
   $('calendarPlan').disabled=!selectedCalendarDate;
@@ -35,6 +35,10 @@ showDay=function(d){
   selectedCalendarDate=d;drawCalendar();
   document.querySelector('#monthRows .highlighted')?.scrollIntoView({block:'nearest',behavior:'smooth'});
 };
+function goToToday(){
+  const now=new Date();view=new Date(now.getFullYear(),now.getMonth(),1);
+  selectedCalendarDate=day(now);drawCalendar();
+}
 function planSelectedDay(){if(selectedCalendarDate)openSheet('plan',selectedCalendarDate)}
 function dismissSheet(){
   $('sheet').classList.remove('show');document.body.style.overflow='';sheetFocus?.focus();
@@ -114,3 +118,23 @@ document.addEventListener('keydown',e=>{
     if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}
   }
 });
+
+// Let the browser handle vertical scrolling and pinch zoom; horizontal swipes change month.
+(()=>{
+  const surface=$('calendarSurface');let gesture=null,suppressClickUntil=0;
+  surface.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='touch'||!e.isPrimary){gesture=null;return}
+    gesture={id:e.pointerId,x:e.clientX,y:e.clientY};
+  },{passive:true});
+  surface.addEventListener('pointercancel',()=>{gesture=null},{passive:true});
+  surface.addEventListener('pointerup',e=>{
+    if(!gesture||e.pointerId!==gesture.id)return;
+    const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;gesture=null;
+    if(Math.abs(dx)<50||Math.abs(dx)<=Math.abs(dy)*1.5)return;
+    suppressClickUntil=Date.now()+400;
+    moveMonth(dx<0?1:-1);
+  },{passive:true});
+  surface.addEventListener('click',e=>{
+    if(Date.now()<suppressClickUntil){e.preventDefault();e.stopPropagation()}
+  },true);
+})();
