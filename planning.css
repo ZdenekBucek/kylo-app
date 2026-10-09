@@ -89,3 +89,38 @@ button:focus-visible{outline:3px solid #799575;outline-offset:3px}
 @media(max-width:360px){.home-portrait{width:62px;height:62px;border-radius:20px}.home-welcome h1{font-size:30px}.home-care-main{padding:20px 17px 0}.home-care-top{flex-wrap:wrap}.home-care-date{font-size:34px}}
 
 .home-care-date,.home-weekday{display:block}
+/* Login follows the approved cream and forest-green design. */
+.app.login-shell{padding:0;min-height:100dvh;overflow:hidden}
+#login{display:flex;flex-direction:column;justify-content:flex-start;min-height:100dvh;background:#f8f5ee}
+.login-hero{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 48% 18%,#416f50 0,#315d42 54%,#254c39 100%);border-radius:0 0 46px 46px;padding:calc(44px + env(safe-area-inset-top)) 24px 32px;color:#f8f5ee;text-align:center}
+.login-hero:before,.login-hero:after{content:'';position:absolute;z-index:-1;left:50%;top:-75px;transform:translateX(-50%);width:520px;height:520px;border:1px solid #afc69d22;border-radius:50%;pointer-events:none}
+.login-hero:after{width:390px;height:390px;top:-11px;border-color:#afc69d1b}
+.login-portrait{display:block;width:clamp(130px,40.5vw,174px);height:clamp(130px,40.5vw,174px);margin:0 auto 12px;object-fit:cover;border-radius:36px;box-shadow:0 10px 32px #16332228}
+#login h1{font-size:58px;font-weight:750;letter-spacing:-1.8px;line-height:1.08;margin:12px 0 10px}
+.login-hero p{font-size:14px;line-height:1.5;margin:0;color:#d6e2cb;text-wrap:balance}
+.login-content{display:flex;flex-direction:column;flex:1;padding:30px 27px calc(24px + env(safe-area-inset-bottom))}
+.login-welcome{text-align:center;margin-bottom:25px}
+.login-welcome h2{margin:0 0 9px;color:#315d42;font-size:30px;font-weight:750;letter-spacing:-.8px;line-height:1.2}
+.login-welcome p{margin:0;color:#758778;font-size:14px;line-height:1.5;text-wrap:balance}
+.login-field{margin:0 0 20px}
+.login-field label{display:block;font-size:14px;font-weight:700;color:#315d42;margin-bottom:8px}
+.login-input-wrap{position:relative;display:flex;align-items:center}
+.login-input-wrap .input{display:block;margin:0;height:56px;background:#fdfbf7;border:1.5px solid #d0d9cc;border-radius:18px;padding:15px 14px 15px 55px;font:inherit;font-size:16px;color:#233d2a;box-shadow:none;min-width:0}
+.login-input-wrap #loginPassword{padding-right:54px}
+.login-input-wrap .input::placeholder{color:#98a398;opacity:1}
+.login-input-wrap .input:focus{outline:2px solid #648768;outline-offset:2px;border-color:#71946e}
+.login-field-icon{position:absolute;left:18px;width:22px;height:22px;stroke:#738b77;stroke-width:1.5;fill:none;pointer-events:none}
+.login-password-toggle{position:absolute;right:5px;top:6px;width:44px;height:44px;border:0;border-radius:12px;background:transparent;color:#738b77;display:grid;place-items:center;cursor:pointer}
+.login-password-toggle svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.login-password-toggle .eye-slash{display:none}
+.login-password-toggle[aria-pressed=true] .eye-slash{display:block}
+.login-submit{display:flex;align-items:center;justify-content:center;gap:14px;min-height:60px;margin-top:3px;background:linear-gradient(120deg,#3b684b,#285339);border-radius:20px;font-size:17px;font-weight:700;box-shadow:0 8px 20px #315d4220;cursor:pointer}
+.login-submit svg{width:23px;height:23px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.login-submit:disabled{cursor:wait;opacity:.7}
+.login-error{color:#a53b3b;font-size:13px;line-height:1.5;margin:12px 2px 0;overflow-wrap:anywhere}
+.login-error:empty{display:none}
+.login-footer{display:flex;justify-content:center;align-items:center;gap:9px;color:#788b7a;padding-top:28px;margin-top:auto;font-size:12px;line-height:1.4;text-align:center}
+.login-footer svg{width:19px;height:19px;flex:none;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+@media(max-height:800px){.login-hero{padding-top:calc(30px + env(safe-area-inset-top));padding-bottom:26px}.login-portrait{width:132px;height:132px;border-radius:29px}#login h1{font-size:50px}.login-content{padding-top:25px}.login-welcome{margin-bottom:21px}.login-footer{padding-top:22px}}
+@media(min-width:700px){.app.login-shell,#login{min-height:calc(100dvh - 50px)}}
+@media(max-width:360px){.login-content{padding-left:22px;padding-right:22px}.login-hero{padding-left:22px;padding-right:22px}.login-welcome h2{font-size:28px}}

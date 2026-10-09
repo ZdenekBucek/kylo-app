@@ -4,9 +4,21 @@ const day=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.ge
 const fmt=s=>new Date(s+'T12:00:00').toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'});
 const plus=(s,n)=>{let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+Number(n));return day(d)};
 async function api(action,method='GET',body){let r=await fetch('/api?action='+action,{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:body?JSON.stringify(body):undefined});let x=await r.json().catch(()=>({error:'Chyba komunikace'}));if(!r.ok)throw Object.assign(new Error(x.error||'Chyba serveru'),{status:r.status});return x}
-async function init(){try{setup=(await api('status')).setupRequired;$('setupWrap').hidden=!setup;$('loginAction').textContent=setup?'Vytvořit první účet':'Přihlásit se';try{await refresh();show()}catch(e){if(e.status!==401)throw e}}catch(e){$('loginError').textContent=e.message}}
-async function enter(){try{$('loginError').textContent='';let f=document.querySelectorAll('#login .input');await api(setup?'setup':'login','POST',{username:f[0].value,password:f[1].value,code:$('setupCode').value});await refresh();show()}catch(e){$('loginError').textContent=e.message}}
-function show(){$('login').classList.add('hidden');$('inside').classList.remove('hidden');render();loadVersion()}
+async function init(){try{setup=(await api('status')).setupRequired;$('setupWrap').hidden=!setup;$('loginActionLabel').textContent=setup?'Vytvořit první účet':'Přihlásit se';try{await refresh();show()}catch(e){if(e.status!==401)throw e}}catch(e){$('loginError').textContent=e.message}}
+async function enter(event){
+ event?.preventDefault();const button=$('loginAction');if(button.disabled)return;
+ button.disabled=true;button.setAttribute('aria-busy','true');$('loginActionLabel').textContent='Přihlašuji…';$('loginError').textContent='';
+ try{
+  await api(setup?'setup':'login','POST',{username:$('loginUsername').value,password:$('loginPassword').value,code:$('setupCode').value});
+  await refresh();show();
+ }catch(e){$('loginError').textContent=e.message}
+ finally{button.disabled=false;button.setAttribute('aria-busy','false');$('loginActionLabel').textContent=setup?'Vytvořit první účet':'Přihlásit se'}
+}
+function toggleLoginPassword(){
+ const input=$('loginPassword'),button=$('loginPasswordToggle'),visible=input.type==='password';
+ input.type=visible?'text':'password';button.setAttribute('aria-pressed',String(visible));button.setAttribute('aria-label',visible?'Skrýt heslo':'Zobrazit heslo');input.focus({preventScroll:true});
+}
+function show(){$('login').classList.add('hidden');$('appShell').classList.remove('login-shell');$('inside').classList.remove('hidden');render();loadVersion()}
 async function refresh(){state=await api('state');render()}
 function go(id,button){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.nav button:not(.plus)').forEach(x=>x.classList.remove('active'));button.classList.add('active');render();if(id==='profile'){refreshPushStatus();loadPrefs();if(state.user?.role==='admin')loadAdminUsers()}}
 function row(x,d){return '<div class="care"><div class="ico">'+esc(x.icon||'🐾')+'</div><div class="grow"><div class="name">'+esc(x.product||x.title||x.type_name)+'</div><div class="sub">'+esc(d)+'</div></div></div>'}
