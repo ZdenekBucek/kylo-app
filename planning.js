@@ -57,7 +57,7 @@ openSheet=function(mode='record',date=null){
   $('entryModes').hidden=false;
   document.querySelectorAll('[data-entry-mode]').forEach(b=>{b.classList.toggle('selected',b.dataset.entryMode===mode);b.setAttribute('aria-pressed',String(b.dataset.entryMode===mode))});
   $('sheetIntro').textContent=mode==='plan'?'Vyber akci pro '+fmt(entryDate)+'.':'Co jsi pro Kyla udělal?';
-  $('typeOptions').innerHTML=state.types.map(t=>'<button type="button" class="action-option" data-pick-type="'+esc(t.slug)+'"><span class="action-icon">'+uiIcon(t.slug,t.icon)+'</span><span><b>'+esc(t.name)+'</b><small>'+esc(t.default_dose||intervalText(t.default_interval_days))+'</small></span><span class="option-arrow" aria-hidden="true">›</span></button>').join('');
+  $('typeOptions').innerHTML=state.types.map(t=>'<button type="button" class="action-option" data-pick-type="'+esc(t.slug)+'"><span class="action-icon">'+uiIcon(t.slug,t.icon)+'</span><span><b>'+esc(t.name)+'</b><small>'+esc(t.default_dose||intervalText(t.default_interval_days))+'</small></span><span class="option-arrow" aria-hidden="true">›</span></button>'+(t.slug.startsWith('custom-')?'<button type="button" class="action-remove-icon" data-remove-type="'+esc(t.id)+'" aria-label="Odstranit akci '+esc(t.name)+'">'+uiIcon('trash')+'</button>':'')+'</div>').join('');
   $('sheetClose').focus();
 };
 function changeEntryMode(mode){openSheet(mode,entryDate)}
@@ -91,29 +91,43 @@ save=async function(e){
   }catch(x){$('saveError').textContent=x.message;button.disabled=false}
 };
 function renderActions(){
-  $('actionDefinitions').innerHTML=state.types.map(t=>'<button type="button" class="action-option" data-edit-type="'+esc(t.id)+'"><span class="action-icon">'+uiIcon(t.slug,t.icon)+'</span><span><b>'+esc(t.name)+'</b><small>'+esc([t.default_dose,intervalText(t.default_interval_days)].filter(Boolean).join(' · '))+'</small></span><span class="option-arrow" aria-hidden="true">›</span></button>').join('');
+  $('actionDefinitions').innerHTML=state.types.map(t=>'<div class="action-definition-row"><button type="button" class="action-option" data-edit-type="'+esc(t.id)+'"><span class="action-icon">'+uiIcon(t.slug,t.icon)+'</span><span><b>'+esc(t.name)+'</b><small>'+esc([t.default_dose,intervalText(t.default_interval_days)].filter(Boolean).join(' · '))+'</small></span><span class="option-arrow" aria-hidden="true">›</span></button>'+(t.slug.startsWith('custom-')?'<button type="button" class="action-remove-icon" data-remove-type="'+esc(t.id)+'" aria-label="Odstranit akci '+esc(t.name)+'">'+uiIcon('trash')+'</button>':'')+'</div>').join('');
   $('actionAdmin').hidden=state.user?.role!=='admin';
 }
 function editAction(id){
-  if(state.user?.role!=='admin')return;
+  if(state.user?.role!=='admin'||$('actionEditor').dataset.busy==='1')return;
   const t=state.types.find(t=>t.id===id);
   $('actionEditor').hidden=false;$('actionId').value=t?.id||'';$('actionName').value=t?.name||'';$('actionDose').value=t?.default_dose||'';$('actionInterval').value=t?.default_interval_days||0;$('actionReminders').value=offsetsText(t?.reminder_offsets||[7,1,0]);
-  $('actionEditorTitle').textContent=t?'Upravit akci':'Nová akce';$('actionFeedback').textContent='';$('actionName').focus();
+  $('actionRemove').hidden=!t?.slug?.startsWith('custom-');$('actionEditorTitle').textContent=t?'Upravit akci':'Nová akce';$('actionFeedback').textContent='';$('actionName').focus();
 }
 async function saveAction(e){
-  e.preventDefault();const button=$('actionSave');button.disabled=true;
+  e.preventDefault();if($('actionEditor').dataset.busy==='1')return;const editor=$('actionEditor');uiDialogBusy(editor,true);
   try{
     const id=$('actionId').value;
     const r=await fetch('/api/actions',{method:id?'PUT':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name:$('actionName').value,dose:$('actionDose').value,intervalDays:Number($('actionInterval').value),reminderOffsets:readOffsets($('actionReminders').value)})});
     const x=await r.json();if(!r.ok)throw Error(x.error||'Akci se nepodařilo uložit');
     await refresh();$('actionEditor').hidden=true;$('actionFeedback').textContent='Akce uložena. Teď ji můžeš vybrat v kalendáři.';
-  }catch(x){$('actionFeedback').textContent=x.message}finally{button.disabled=false}
+  }catch(x){$('actionFeedback').textContent=x.message}finally{uiDialogBusy(editor,false)}
+}
+async function removeAction(id,opener){
+  const action=state.types.find(t=>t.id===(id||$('actionId').value)),button=opener||$('actionRemove'),editor=$('actionEditor');
+  if(state.user?.role!=='admin'||!action?.slug?.startsWith('custom-')||button.disabled||editor.dataset.busy==='1')return;
+  button.disabled=true;
+  const confirmed=await askConfirmation({title:'Odstranit vlastní akci?',message:'Akce „'+action.name+'“ zmizí z nabídky pro nové plánování. Záznamy v historii a již naplánované termíny zůstanou zachované.',accept:'Odstranit akci',cancel:'Ponechat akci',opener:button});
+  button.disabled=false;if(!confirmed){button.focus();return}
+  uiDialogBusy(editor,true);$('actionFeedback').textContent='';
+  try{
+    const r=await fetch('/api/actions',{method:'DELETE',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:action.id})});
+    const x=await r.json();if(!r.ok)throw Error(x.error||'Akci se nepodařilo odstranit');
+    await refresh();if($('actionId').value===action.id)editor.hidden=true;$('actionFeedback').textContent='Akce odstraněna z nabídky pro nové plánování.';
+  }catch(x){$('actionFeedback').textContent=x.message}finally{uiDialogBusy(editor,false)}
 }
 const renderBeforePlanning=render;
 render=function(){renderBeforePlanning();drawCalendar();renderActions()};
 document.addEventListener('click',e=>{
   const pickButton=e.target.closest('[data-pick-type]');if(pickButton)pick(pickButton.dataset.pickType);
   const editButton=e.target.closest('[data-edit-type]');if(editButton)editAction(editButton.dataset.editType);
+  const removeButton=e.target.closest('[data-remove-type]');if(removeButton)removeAction(removeButton.dataset.removeType,removeButton);
 });
 document.addEventListener('keydown',e=>{
   if(!$('sheet').classList.contains('show'))return;

@@ -5,7 +5,7 @@ const {uuid,settings}=require('../lib/planning');
 const send=(r,s,x)=>r.status(s).setHeader('Cache-Control','no-store').json(x);
 module.exports=async(req,res)=>{
   try {
-    if (!['POST','PUT'].includes(req.method)) return send(res,405,{error:'Nepodporovaná metoda'});
+    if (!['POST','PUT','DELETE'].includes(req.method)) return send(res,405,{error:'Nepodporovaná metoda'});
     if (req.headers['sec-fetch-site']==='cross-site' || req.headers.origin && new URL(req.headers.origin).host!==req.headers.host) return send(res,403,{error:'Nepovolený požadavek'});
     if (!String(req.headers['content-type']||'').startsWith('application/json')) return send(res,415,{error:'Požadován JSON'});
     if (Buffer.byteLength(JSON.stringify(req.body||{}))>32768) return send(res,413,{error:'Příliš velký požadavek'});
@@ -14,6 +14,11 @@ module.exports=async(req,res)=>{
     if (!users.length) return send(res,401,{error:'Přihlas se'});
     if (users[0].role!=='admin') return send(res,403,{error:'Nastavení akcí spravuje administrátor'});
     const b=req.body||{};
+    if(req.method==='DELETE'){
+      if(!uuid(b.id))return send(res,400,{error:'Neplatné ID akce'});
+      const rows=await db.query("UPDATE care_types SET is_active=false WHERE id=$1 AND slug LIKE 'custom-%' AND is_active=true RETURNING id",[b.id]);
+      return send(res,rows.length?200:404,rows.length?{ok:true}:{error:'Vlastní akce nebyla nalezena nebo už je odstraněná'});
+    }
     let value;try {value=settings(b)} catch(e){return send(res,400,{error:e.message})}
     const {name,dose,interval,reminders}=value;
     if(req.method==='PUT'&&!uuid(b.id)) return send(res,400,{error:'Neplatné ID akce'});
