@@ -1,0 +1,31 @@
+name: Kylo browser E2E
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium webkit
+      - name: Unit and integration tests
+        run: npm run test:ci
+      - name: Real browser E2E tests (mocked API, no production writes)
+        run: npm run test:e2e
+      - name: Keep traces and screenshots on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

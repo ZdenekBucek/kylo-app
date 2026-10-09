@@ -1,0 +1,22 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8').replace(/\binit\(\);\s*$/,'');
+function fixture(){const nodes=new Map();const node=id=>{if(!nodes.has(id))nodes.set(id,{id,innerHTML:'',textContent:'',value:'',hidden:false,dataset:{},classList:{add(){},remove(){},toggle(){}},querySelector(sel){return node(id+sel)},setAttribute(){}});return nodes.get(id)};const doc={getElementById:node,querySelectorAll:()=>[],querySelector:()=>null};const context=vm.createContext({document:doc,Date,Intl,Number,String,Math,Map,Array,JSON,console,fetch:async()=>{throw Error('unexpected network')},navigator:{},location:{},setTimeout(){},alert(){}});vm.runInContext(source,context);return{node,run:code=>vm.runInContext(code,context)}}
+test('HTML escape prevents injection',()=>{const f=fixture();assert.equal(f.run('esc("<img src=x onerror=\\"alert(1)\\">&")'),'&lt;img src=x onerror=&quot;alert(1)&quot;&gt;&amp;')});
+test('HTML escape accepts null',()=>{assert.equal(fixture().run('esc(null)'),'')});
+test('local date formats ISO',()=>{assert.equal(fixture().run('day(new Date(2026,9,8))'),'2026-10-08')});
+test('35-day Frontline interval',()=>{assert.equal(fixture().run('plus("2026-09-26",35)'),'2026-10-31')});
+test('year boundary date arithmetic',()=>{assert.equal(fixture().run('plus("2026-12-30",5)'),'2027-01-04')});
+test('leap year date arithmetic',()=>{assert.equal(fixture().run('plus("2028-02-28",1)'),'2028-02-29')});
+test('events sorted by due date',()=>{const f=fixture();f.run('state={types:[],records:[{slug:"fleas-ticks",product:"Frontline",next_due_on:"2026-11-10"}],plans:[{title:"Vet",due_on:"2026-10-20"}]}');assert.equal(f.run('events()[0].title'),'Vet')});
+test('weighing form contains weight but not dose',()=>{const f=fixture();f.run('state.types=[{slug:"weight",icon:"⚖️",name:"Vážení"}];pick("⚖️")');assert.match(f.node('recordFields').innerHTML,/Hmotnost \(kg\)/);assert.doesNotMatch(f.node('recordFields').innerHTML,/Dávka/)});
+test('veterinary form omits dose',()=>{const f=fixture();f.run('state.types=[{slug:"vet-check",icon:"🩺",name:"Veterinární návštěva"}];pick("🩺")');assert.doesNotMatch(f.node('recordFields').innerHTML,/Dávka/)});
+test('medication form includes dose',()=>{const f=fixture();f.run('state.types=[{slug:"fleas-ticks",icon:"🕷️",name:"Frontline",default_interval_days:35}];pick("🕷️")');assert.match(f.node('recordFields').innerHTML,/Dávka/)});
+test('weight chart empty state',()=>{const f=fixture();f.run('state.records=[];drawWeight()');assert.match(f.node('weightGraph').innerHTML,/žádná měření/i)});
+test('weight chart displays real values and trend',()=>{const f=fixture();f.run('state.records=[{event_date:"2026-09-01",weight_kg:7.7},{event_date:"2026-10-01",weight_kg:7.5}];drawWeight()');assert.match(f.node('weightGraph').innerHTML,/<svg/);assert.match(f.node('weightGraph').innerHTML,/<path/);assert.match(f.node('weightTrend').textContent,/-0,2 kg/)});
+test('one weighing does not invent trend',()=>{const f=fixture();f.run('state.records=[{event_date:"2026-10-01",weight_kg:7.7}];drawWeight()');assert.match(f.node('weightTrend').textContent,/Po dalším vážení/)});
+test('profile displays real username',()=>{const f=fixture();f.run('state={user:{username:"owner",role:"admin"},types:[],plans:[],records:[]};renderProfile()');assert.equal(f.node('profileUsername').textContent,'owner')});
+test('standard user does not see admin controls',()=>{const f=fixture();f.run('state={user:{username:"member",role:"user"},types:[],plans:[],records:[]};renderProfile()');assert.equal(f.node('adminUserAccordion').hidden,true)});
+test('profile displays latest weight',()=>{const f=fixture();f.run('state={user:{username:"owner"},types:[],plans:[],records:[{event_date:"2026-08-01",weight_kg:7.8},{event_date:"2026-10-01",weight_kg:7.6}]};renderProfile()');assert.match(f.node('profileWeight').textContent,/7,6 kg/)});
+test('October calendar has 31 days',()=>{const f=fixture();f.run('state={user:{},types:[],plans:[],records:[]};view=new Date(2026,9,1);drawCalendar()');assert.equal((f.node('calendarDays').innerHTML.match(/class="day /g)||[]).length,31)});
+test('leap February calendar has 29 days',()=>{const f=fixture();f.run('state={user:{},types:[],plans:[],records:[]};view=new Date(2028,1,1);drawCalendar()');assert.equal((f.node('calendarDays').innerHTML.match(/class="day /g)||[]).length,29)});

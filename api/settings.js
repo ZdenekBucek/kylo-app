@@ -1,0 +1,16 @@
+const {neon}=require('@neondatabase/serverless');const {createHash}=require('node:crypto');
+const defaults={'fleas-ticks':[3,1,0],'deworming':[7,1,0],'vaccination':[30,7,0],'vet-check':[7,1,0],'weight':[1,0],'other':[7,1,0]};
+const send=(r,s,x)=>r.status(s).setHeader('Cache-Control','no-store').json(x);
+async function who(req,sql){const t=(req.headers.cookie||'').match(/(?:^|;\s*)kylo_session=([^;]+)/)?.[1];if(!t)return null;const h=createHash('sha256').update(t).digest('hex');let u=await sql.query('SELECT u.id FROM user_sessions s JOIN app_users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now() AND u.is_active=true',[h]);return u[0]||null}
+module.exports=async(req,res)=>{try{
+if(req.method==='GET'&&req.query.action==='version'){let key=process.env.VERCEL_DEPLOYMENT_ID||process.env.VERCEL_URL;if(!key)return send(res,200,{version:'1.2.0',automatic:false});const sql=neon(process.env.DATABASE_URL);await sql.query('INSERT INTO app_releases(deployment_id) VALUES($1) ON CONFLICT(deployment_id) DO NOTHING',[key]);const r=await sql.query('SELECT id FROM app_releases WHERE deployment_id=$1',[key]);return send(res,200,{version:'1.2.'+r[0].id,automatic:true})}
+if(!['GET','POST'].includes(req.method))return send(res,405,{error:'Nepodporovaná metoda'});
+if(req.method==='POST'&&req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host)return send(res,403,{error:'Nepovolený původ'});
+const sql=neon(process.env.DATABASE_URL),u=await who(req,sql);if(!u)return send(res,401,{error:'Přihlas se'});
+if(req.method==='GET'){const r=await sql.query('SELECT enabled,preferred_time,repeat_overdue,reminders FROM user_notification_settings WHERE user_id=$1',[u.id]);return send(res,200,{enabled:r[0]?.enabled??true,preferredTime:r[0]?.preferred_time||'09:00',repeatOverdue:r[0]?.repeat_overdue??true,reminders:{...defaults,...(r[0]?.reminders||{})},deliveryNote:'Na bezplatném Vercelu zatím odesíláme jednou denně kolem 9–10 h českého času. Zvolený čas ukládáme pro budoucí přesné plánování.'})}
+const b=req.body||{},time=String(b.preferredTime||'09:00');
+if(!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(time)||typeof b.enabled!=='boolean'||typeof b.repeatOverdue!=='boolean')return send(res,400,{error:'Neplatné nastavení'});
+const reminders={};for(const [key,def] of Object.entries(defaults)){const v=b.reminders?.[key]??def;if(!Array.isArray(v)||v.length>6||v.some(x=>!Number.isInteger(x)||x<0||x>365))return send(res,400,{error:'Neplatné intervaly'});reminders[key]=[...new Set(v)].sort((a,b)=>b-a)}
+await sql.query('INSERT INTO user_notification_settings(user_id,enabled,preferred_time,repeat_overdue,reminders) VALUES($1,$2,$3,$4,$5::jsonb) ON CONFLICT(user_id) DO UPDATE SET enabled=EXCLUDED.enabled,preferred_time=EXCLUDED.preferred_time,repeat_overdue=EXCLUDED.repeat_overdue,reminders=EXCLUDED.reminders,updated_at=now()',[u.id,b.enabled,time,b.repeatOverdue,JSON.stringify(reminders)]);
+return send(res,200,{ok:true});
+}catch(e){console.error('settings',e.message);return send(res,500,{error:'Chyba nastavení'})}};

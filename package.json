@@ -1,0 +1,23 @@
+{
+  "name": "kylo-app",
+  "version": "1.4.8",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:unit": "node --test tests/unit.test.js",
+    "test:integration": "node --test tests/integration.test.js tests/ui.integration.test.js",
+    "test:security": "node --test tests/security.test.js",
+    "test:smoke": "node --test tests/smoke.test.js",
+    "test:syntax": "node --check app.js && node --check enhancements.js && node --check sw.js",
+    "test:ci": "npm run test:syntax && npm test",
+    "test:e2e": "playwright test",
+    "test:e2e:list": "playwright test --list"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}

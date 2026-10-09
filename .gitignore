@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+.vercel/
+public/
+playwright-report/
+test-results/
+.DS_Store
