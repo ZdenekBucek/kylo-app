@@ -16,8 +16,8 @@ function drawMonthOverview(){
   $('monthRows').innerHTML=calendarEvents().filter(e=>e.due.startsWith(month)).map(e=>{
     const selected=e.due===selectedCalendarDate;
     const target=e.recordId?'data-record="'+esc(e.recordId)+'"':'data-event="'+esc(e.planId||e.slug)+'" data-plan="'+(e.planId?'1':'0')+'"';
-    return '<button class="care kylo-action month-event '+(selected?'highlighted':'')+'" '+target+' data-calendar-date="'+e.due+'" '+(selected?'aria-current="date"':'')+'><span class="ico">'+esc(e.icon||'🐾')+'</span><span class="grow"><span class="name">'+esc(e.product||e.title||e.type_name)+'</span><span class="sub">'+fmt(e.due)+' · '+(e.recordId?'Provedeno':'Plánováno')+(e.dose?' · '+esc(e.dose):'')+'</span></span><span aria-hidden="true">›</span></button>';
-  }).join('')||'<p class="sub calendar-empty">V tomto měsíci zatím nejsou žádné termíny.</p>';
+    return '<button class="care kylo-action month-event '+(selected?'highlighted':'')+'" '+target+' data-calendar-date="'+e.due+'" '+(selected?'aria-current="date"':'')+'><span class="ico">'+uiIcon(e.slug,e.icon)+'</span><span class="grow"><span class="name">'+esc(e.product||e.title||e.type_name)+'</span><span class="sub">'+fmt(e.due)+(e.dose?' · '+esc(e.dose):'')+'</span><span class="row-status '+(e.recordId?'done':e.due<day(new Date())?'overdue':'')+'">'+(e.recordId?'Provedeno':e.due<day(new Date())?'Po termínu':'Plánováno')+'</span></span><span class="row-chevron">'+uiIcon('right')+'</span></button>';
+  }).join('')||uiEmpty('Žádné termíny','Vyber den v kalendáři a naplánuj péči.','calendar');
 }
 drawCalendar=function(){
   const y=view.getFullYear(),m=view.getMonth(),count=new Date(y,m+1,0).getDate(),pad=(new Date(y,m,1).getDay()+6)%7,ev=calendarEvents();
@@ -46,18 +46,18 @@ function goToToday(){
 }
 function planSelectedDay(){if(selectedCalendarDate)openSheet('plan',selectedCalendarDate)}
 function dismissSheet(){
-  $('sheet').classList.remove('show');document.body.style.overflow='';sheetFocus?.focus();
+  $('sheet').classList.remove('show');uiSyncScroll();sheetFocus?.focus();
 }
 closeSheet=function(e){if(e.target.id==='sheet')dismissSheet()};
 openSheet=function(mode='record',date=null){
   if(!$('sheet').classList.contains('show'))sheetFocus=document.activeElement?.matches('button')?document.activeElement:(date?$('calendarPlan'):document.querySelector('.nav .plus'));entryMode=mode;entryDate=date||day(new Date());
-  $('sheet').classList.add('show');document.body.style.overflow='hidden';
+  $('sheet').classList.add('show');uiSyncScroll();
   $('recordFields').hidden=true;$('typeOptions').hidden=false;
   $('sheetTitle').textContent=mode==='plan'?'Naplánovat akci':'Přidat péči';
   $('entryModes').hidden=false;
   document.querySelectorAll('[data-entry-mode]').forEach(b=>{b.classList.toggle('selected',b.dataset.entryMode===mode);b.setAttribute('aria-pressed',String(b.dataset.entryMode===mode))});
   $('sheetIntro').textContent=mode==='plan'?'Vyber akci pro '+fmt(entryDate)+'.':'Co jsi pro Kyla udělal?';
-  $('typeOptions').innerHTML=state.types.map(t=>'<button type="button" class="action-option" data-pick-type="'+esc(t.slug)+'"><span class="action-icon">'+esc(t.icon)+'</span><span><b>'+esc(t.name)+'</b><small>'+esc(t.default_dose||intervalText(t.default_interval_days))+'</small></span><span class="option-arrow" aria-hidden="true">›</span></button>').join('');
+  $('typeOptions').innerHTML=state.types.map(t=>'<button type="button" class="action-option" data-pick-type="'+esc(t.slug)+'"><span class="action-icon">'+uiIcon(t.slug,t.icon)+'</span><span><b>'+esc(t.name)+'</b><small>'+esc(t.default_dose||intervalText(t.default_interval_days))+'</small></span><span class="option-arrow" aria-hidden="true">›</span></button>').join('');
   $('sheetClose').focus();
 };
 function changeEntryMode(mode){openSheet(mode,entryDate)}
@@ -91,7 +91,7 @@ save=async function(e){
   }catch(x){$('saveError').textContent=x.message;button.disabled=false}
 };
 function renderActions(){
-  $('actionDefinitions').innerHTML=state.types.map(t=>'<button type="button" class="action-option" data-edit-type="'+esc(t.id)+'"><span class="action-icon">'+esc(t.icon)+'</span><span><b>'+esc(t.name)+'</b><small>'+esc([t.default_dose,intervalText(t.default_interval_days)].filter(Boolean).join(' · '))+'</small></span><span class="option-arrow" aria-hidden="true">›</span></button>').join('');
+  $('actionDefinitions').innerHTML=state.types.map(t=>'<button type="button" class="action-option" data-edit-type="'+esc(t.id)+'"><span class="action-icon">'+uiIcon(t.slug,t.icon)+'</span><span><b>'+esc(t.name)+'</b><small>'+esc([t.default_dose,intervalText(t.default_interval_days)].filter(Boolean).join(' · '))+'</small></span><span class="option-arrow" aria-hidden="true">›</span></button>').join('');
   $('actionAdmin').hidden=state.user?.role!=='admin';
 }
 function editAction(id){

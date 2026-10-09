@@ -26,7 +26,7 @@ test('bottom panel switches entry mode and supports closing with Escape',async({
 });
 test('one-off plan can be cancelled without creating a record',async({page})=>{
  await nav(page,'Kalendář');await page.locator('[data-date="2026-10-12"]').click();await page.locator('#calendarPlan').click();await page.locator('#typeOptions button').filter({hasText:'Veterinární návštěva'}).click();await page.locator('#planInterval').fill('0');await page.locator('#planReminders').fill('');await page.locator('#recordForm button[type="submit"]').click();
- expect(db.plans.at(-1)).toMatchObject({interval_days:0,reminder_offsets:[]});await page.locator('#monthRows .highlighted').click();page.once('dialog',d=>d.accept());await page.locator('#cancelPlan').click();await expect(page.locator('#monthRows .highlighted')).toHaveCount(0);expect(db.records).toHaveLength(2);
+ expect(db.plans.at(-1)).toMatchObject({interval_days:0,reminder_offsets:[]});await page.locator('#monthRows .highlighted').click();await page.locator('#cancelPlan').click();await page.locator('#confirmAccept').click();await expect(page.locator('#monthRows .highlighted')).toHaveCount(0);expect(db.records).toHaveLength(2);
 });
 test('mobile panel and calendar load their styles without horizontal overflow',async({page})=>{
  await nav(page,'Kalendář');await page.locator('[data-date="2026-10-31"]').click();expect(await page.locator('#calendarDays [aria-pressed="true"]').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(49, 93, 66)');
