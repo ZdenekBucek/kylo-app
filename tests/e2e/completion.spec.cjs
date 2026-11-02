@@ -28,7 +28,13 @@ test('recurring weighing requires a new weight and completion controls fit on mo
 test('calendar confirmation is inside its item and does not trigger the detail action',async({page})=>{
  await nav(page,'Kalendář');await page.getByRole('button',{name:'Předchozí měsíc'}).click();
  const row=page.locator('#monthRows .month-entry').filter({has:page.locator('[data-event="fleas-ticks"]')}),details=row.locator('[data-event]'),confirm=row.locator('.complete-care');
- const itemBox=await row.boundingBox(),buttonBox=await confirm.boundingBox();expect(buttonBox.x).toBeGreaterThanOrEqual(itemBox.x);expect(buttonBox.y+buttonBox.height).toBeLessThanOrEqual(itemBox.y+itemBox.height);expect(await confirm.evaluate(e=>Boolean(e.closest('button button')))).toBe(false);
+ const itemBox=await row.boundingBox(),buttonBox=await confirm.boundingBox(),standardBox=await page.locator('#monthRows .month-entry').filter({has:page.locator('[data-record]')}).first().boundingBox();expect(Math.abs(itemBox.height-standardBox.height)).toBeLessThanOrEqual(1);expect(Math.abs(buttonBox.y+buttonBox.height/2-itemBox.y-itemBox.height/2)).toBeLessThanOrEqual(1);expect(buttonBox.x).toBeGreaterThanOrEqual(itemBox.x);expect(buttonBox.y+buttonBox.height).toBeLessThanOrEqual(itemBox.y+itemBox.height);expect(await confirm.evaluate(e=>Boolean(e.closest('button button')))).toBe(false);
  await details.click();await expect(page.locator('#planDetail')).toBeVisible();await expect(page.locator('#doneForm')).toHaveCount(0);await expect(page.locator('#kyloContext')).toHaveText('DETAIL AKCE');await page.keyboard.press('Escape');
  await confirm.click();await expect(page.locator('#doneForm')).toBeVisible();await expect(page.locator('#planDetail')).toHaveCount(0);await expect(page.locator('#kyloContext')).toHaveText('PLÁNOVANÁ PÉČE');await expect(page.locator('#doneDate')).toHaveValue('2026-11-02');
+});
+
+test('compact calendar items keep their height and inline confirmation on a narrow phone',async({page})=>{
+ await page.setViewportSize({width:320,height:740});db.records[1].product='Velmi dlouhý název přípravku pro plánovanou péči';await page.reload();await expect(page.locator('#inside')).toBeVisible();await nav(page,'Kalendář');await page.getByRole('button',{name:'Předchozí měsíc'}).click();
+ const row=page.locator('#monthRows .month-entry.has-completion'),standard=page.locator('#monthRows .month-entry').filter({has:page.locator('[data-record]')}).first(),button=row.locator('.complete-care'),r=await row.boundingBox(),s=await standard.boundingBox(),b=await button.boundingBox();
+ expect(Math.abs(r.height-s.height)).toBeLessThanOrEqual(1);expect(Math.abs(b.y+b.height/2-r.y-r.height/2)).toBeLessThanOrEqual(1);expect(b.width).toBeGreaterThanOrEqual(44);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await button.click();await expect(page.locator('#doneForm')).toBeVisible();
 });
