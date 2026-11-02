@@ -4,7 +4,16 @@ const day=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.ge
 const fmt=s=>new Date(s+'T12:00:00').toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'});
 const plus=(s,n)=>{let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+Number(n));return day(d)};
 async function api(action,method='GET',body){let r=await fetch('/api?action='+action,{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:body?JSON.stringify(body):undefined});let x=await r.json().catch(()=>({error:'Chyba komunikace'}));if(!r.ok)throw Object.assign(new Error(x.error||'Chyba serveru'),{status:r.status});return x}
-async function init(){try{setup=(await api('status')).setupRequired;$('setupWrap').hidden=!setup;$('loginActionLabel').textContent=setup?'Vytvořit první účet':'Přihlásit se';try{await refresh();show()}catch(e){if(e.status!==401)throw e}}catch(e){$('loginError').textContent=e.message}}
+async function init(){
+ $('startup').hidden=false;$('startupRetry').hidden=true;$('startupMessage').textContent='Načítám přehled péče…';$('startupMessage').setAttribute('role','status');
+ try{await refresh();show()}
+ catch(e){
+  if(e.status===401){
+   try{setup=(await api('status')).setupRequired;$('setupWrap').hidden=!setup;$('loginActionLabel').textContent=setup?'Vytvořit první účet':'Přihlásit se'}catch{setup=false}
+   $('startup').hidden=true;$('login').classList.remove('hidden');
+  }else{$('startupMessage').textContent='Přehled se nepodařilo načíst. Zkontroluj připojení a zkus to znovu.';$('startupMessage').setAttribute('role','alert');$('startupRetry').hidden=false}
+ }
+}
 async function enter(event){
  event?.preventDefault();const button=$('loginAction');if(button.disabled)return;
  button.disabled=true;button.setAttribute('aria-busy','true');$('loginActionLabel').textContent='Přihlašuji…';$('loginError').textContent='';
@@ -18,7 +27,7 @@ function toggleLoginPassword(){
  const input=$('loginPassword'),button=$('loginPasswordToggle'),visible=input.type==='password';
  input.type=visible?'text':'password';button.setAttribute('aria-pressed',String(visible));button.setAttribute('aria-label',visible?'Skrýt heslo':'Zobrazit heslo');input.focus({preventScroll:true});
 }
-function show(){$('login').classList.add('hidden');$('appShell').classList.remove('login-shell');$('inside').classList.remove('hidden');render();loadVersion()}
+function show(){$('startup').hidden=true;$('login').classList.add('hidden');$('appShell').classList.remove('login-shell');$('inside').classList.remove('hidden');render();loadVersion()}
 async function refresh(){state=await api('state');render()}
 function go(id,button){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.nav button:not(.plus)').forEach(x=>x.classList.remove('active'));button.classList.add('active');render();if(id==='profile'){refreshPushStatus();loadPrefs();if(state.user?.role==='admin')loadAdminUsers()}}
 function row(x,d){return '<div class="care"><div class="ico">'+esc(x.icon||'🐾')+'</div><div class="grow"><div class="name">'+esc(x.product||x.title||x.type_name)+'</div><div class="sub">'+esc(d)+'</div></div></div>'}
@@ -27,9 +36,49 @@ function events(){
  const plans=state.plans.map(p=>({...p,due:p.due_on,planId:p.id,icon:p.icon||state.types.find(t=>t.id===p.care_type_id)?.icon||'🐾'}));
  return [...latest.values()].filter(Boolean).filter(r=>!plans.some(p=>p.care_type_id===state.types.find(t=>t.slug===r.slug)?.id&&p.due===r.due)).concat(plans).sort((a,b)=>a.due.localeCompare(b.due));
 }
-let weightRange='all';
-function setWeightRange(r){weightRange=r;drawWeight()}
-function drawWeight(){const w=state.records.filter(x=>x.weight_kg!=null&&Number(x.weight_kg)>0).map(x=>({date:x.event_date,kg:Number(x.weight_kg)})).sort((a,b)=>a.date.localeCompare(b.date)),last=w.at(-1);$('weightCard').querySelector('.metric').textContent=last?last.kg.toLocaleString('cs-CZ')+' kg':'Bez měření';$('weightCard').querySelector('.sub').textContent=last?'Poslední vážení · '+fmt(last.date):'Zatím bez vážení';const diff=w.length>1?last.kg-w.at(-2).kg:null;$('weightTrend').textContent=diff===null?(w.length?'Po dalším vážení se zobrazí trend.':'Přidej první vážení přes +.'):(diff>0?'+':'')+diff.toLocaleString('cs-CZ',{maximumFractionDigits:2})+' kg oproti předchozímu měření';document.querySelectorAll('[data-weight-range]').forEach(b=>b.classList.toggle('selected',b.dataset.weightRange===weightRange));let cut=null;if(weightRange!=='all'){let d=new Date();d.setMonth(d.getMonth()-(weightRange==='6m'?6:12));cut=day(d)}const p=cut?w.filter(x=>x.date>=cut):w,box=$('weightGraph');if(!p.length){box.innerHTML='<div class="weight-empty">V tomto období nejsou žádná měření.</div>';return}const W=340,H=190,L=40,R=12,T=17,B=37,values=p.map(x=>x.kg),mn=Math.min(...values),mx=Math.max(...values),pad=Math.max(.2,(mx-mn)*.25),lo=Math.max(0,mn-pad),hi=mx+pad,ts=p.map(x=>Date.parse(x.date+'T12:00:00Z')),t0=Math.min(...ts),t1=Math.max(...ts),x=t=>t0===t1?L+(W-L-R)/2:L+(t-t0)/(t1-t0)*(W-L-R),y=v=>T+(hi-v)/(hi-lo)*(H-T-B),pts=p.map((q,i)=>({...q,x:x(ts[i]),y:y(q.kg)}));let grid=[0,.5,1].map(f=>{let val=lo+(hi-lo)*f,py=y(val);return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+py+'" y2="'+py+'" stroke="#e2eae2" stroke-dasharray="3 4"/><text x="'+(L-5)+'" y="'+(py+4)+'" text-anchor="end" font-size="10" fill="#7b847f">'+val.toFixed(1)+'</text>'}).join('');let path=pts.map((q,i)=>(i?'L':'M')+q.x.toFixed(1)+' '+q.y.toFixed(1)).join(' ');let dots=pts.map(q=>'<circle cx="'+q.x+'" cy="'+q.y+'" r="5" fill="#315d42" stroke="#fff" stroke-width="2"><title>'+fmt(q.date)+': '+q.kg+' kg</title></circle>').join('');let ix=[0,Math.floor((p.length-1)/2),p.length-1].filter((v,i,a)=>a.indexOf(v)===i);let labels=ix.map(i=>'<text x="'+pts[i].x+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="#7b847f">'+new Date(p[i].date+'T12:00:00').toLocaleDateString('cs-CZ')+'</text>').join('');box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Vývoj hmotnosti Kyla">'+grid+(pts.length>1?'<path d="'+path+'" stroke="#315d42" stroke-width="2.5" fill="none"/>':'')+dots+labels+'</svg>'}
+let weightRange='all',weightPoints=[],selectedWeightKey=null;
+function setWeightRange(r){weightRange=r;selectedWeightKey=null;drawWeight()}
+function weightSelection(){
+ const selected=weightPoints.find(p=>p.key===selectedWeightKey),details=$('weightPointDetails');
+ details.hidden=!weightPoints.length;
+ details.textContent=selected?fmt(selected.date)+' · '+selected.kg.toLocaleString('cs-CZ',{maximumFractionDigits:2})+' kg':'Klepni na bod pro datum a hmotnost.';
+ document.querySelectorAll('#weightGraph [data-weight-index]').forEach((node,i)=>{const active=weightPoints[i]?.key===selectedWeightKey;node.setAttribute('aria-pressed',String(active));node.classList.toggle('selected',active)});
+}
+function selectWeightPoint(index,event){
+ if(event?.detail>0){
+  const svg=event.currentTarget.ownerSVGElement,matrix=svg?.getScreenCTM();
+  if(matrix){const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;const local=point.matrixTransform(matrix.inverse());let distance=Infinity;weightPoints.forEach((p,i)=>{const d=(p.x-local.x)**2+(p.y-local.y)**2;if(d<distance){distance=d;index=i}})}
+ }
+ if(!weightPoints[index])return;selectedWeightKey=weightPoints[index].key;weightSelection();
+}
+function weightPointKey(event,index){
+ let next=index;
+ if(event.key==='ArrowRight')next=Math.min(weightPoints.length-1,index+1);
+ else if(event.key==='ArrowLeft')next=Math.max(0,index-1);
+ else if(event.key==='Home')next=0;
+ else if(event.key==='End')next=weightPoints.length-1;
+ else if(!['Enter',' '].includes(event.key))return;
+ event.preventDefault();selectWeightPoint(next);document.querySelector('#weightGraph [data-weight-index="'+next+'"]')?.focus();
+}
+function drawWeight(){
+ const w=state.records.map((r,i)=>({...r,key:r.id||r.event_date+':'+i})).filter(r=>r.weight_kg!=null&&Number(r.weight_kg)>0).map(r=>({key:r.key,date:r.event_date,kg:Number(r.weight_kg)})).sort((a,b)=>a.date.localeCompare(b.date)),last=w.at(-1);
+ $('weightCard').querySelector('.metric').textContent=last?last.kg.toLocaleString('cs-CZ')+' kg':'Bez měření';
+ $('weightCard').querySelector('.sub').textContent=last?'Poslední vážení · '+fmt(last.date):'Zatím bez vážení';
+ const diff=w.length>1?last.kg-w.at(-2).kg:null;
+ $('weightTrend').textContent=diff===null?(w.length?'Po dalším vážení se zobrazí trend.':'Přidej první vážení přes +.'):(diff>0?'+':'')+diff.toLocaleString('cs-CZ',{maximumFractionDigits:2})+' kg oproti předchozímu měření';
+ document.querySelectorAll('[data-weight-range]').forEach(b=>b.classList.toggle('selected',b.dataset.weightRange===weightRange));
+ let cut=null;if(weightRange!=='all'){let d=new Date();d.setMonth(d.getMonth()-(weightRange==='6m'?6:12));cut=day(d)}
+ const p=cut?w.filter(x=>x.date>=cut):w,box=$('weightGraph');weightPoints=p;
+ if(!p.some(x=>x.key===selectedWeightKey))selectedWeightKey=null;
+ if(!p.length){box.innerHTML='<div class="weight-empty">V tomto období nejsou žádná měření.</div>';weightSelection();return}
+ const W=340,H=190,L=40,R=22,T=22,B=37,values=p.map(x=>x.kg),mn=Math.min(...values),mx=Math.max(...values),pad=Math.max(.2,(mx-mn)*.25),lo=Math.max(0,mn-pad),hi=mx+pad,ts=p.map(x=>Date.parse(x.date+'T12:00:00Z')),t0=Math.min(...ts),t1=Math.max(...ts),x=t=>t0===t1?L+(W-L-R)/2:L+(t-t0)/(t1-t0)*(W-L-R),y=v=>T+(hi-v)/(hi-lo)*(H-T-B),pts=p.map((q,i)=>({...q,x:x(ts[i]),y:y(q.kg)}));
+ const grid=[0,.5,1].map(f=>{const val=lo+(hi-lo)*f,py=y(val);return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+py+'" y2="'+py+'" stroke="#e2eae2" stroke-dasharray="3 4"/><text x="'+(L-5)+'" y="'+(py+4)+'" text-anchor="end" font-size="10" fill="#7b847f">'+val.toFixed(1)+'</text>'}).join('');
+ const path=pts.map((q,i)=>(i?'L':'M')+q.x.toFixed(1)+' '+q.y.toFixed(1)).join(' ');
+ const dots=pts.map((q,i)=>'<g class="weight-point" role="button" tabindex="0" aria-pressed="false" aria-label="'+esc(fmt(q.date)+': '+q.kg.toLocaleString('cs-CZ')+' kg')+'" data-weight-index="'+i+'" onclick="selectWeightPoint('+i+',event)" onkeydown="weightPointKey(event,'+i+')"><circle class="weight-point-hit" cx="'+q.x+'" cy="'+q.y+'" r="22" fill="transparent"/><circle class="weight-point-halo" cx="'+q.x+'" cy="'+q.y+'" r="10"/><circle cx="'+q.x+'" cy="'+q.y+'" r="5" fill="#315d42" stroke="#fff" stroke-width="2"/></g>').join('');
+ const ix=t0===t1?[0]:[0,Math.floor((p.length-1)/2),p.length-1].filter((v,i,a)=>a.indexOf(v)===i).filter(i=>i===0||i===p.length-1||pts[i].x>=pts[0].x+80&&pts[i].x<=pts.at(-1).x-80),labels=ix.map((i,j)=>'<text x="'+pts[i].x+'" y="'+(H-8)+'" text-anchor="'+(ix.length===1?'middle':j===0?'start':j===ix.length-1?'end':'middle')+'" font-size="10" fill="#7b847f">'+new Date(p[i].date+'T12:00:00').toLocaleDateString('cs-CZ')+'</text>').join('');
+ weightPoints=pts;box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="group" aria-label="Vývoj hmotnosti Kyla">'+grid+(pts.length>1?'<path d="'+path+'" stroke="#315d42" stroke-width="2.5" fill="none"/>':'')+labels+dots+'</svg>';weightSelection();
+}
+
 function renderHomeOverview(){
  const now=new Date(),today=day(now),ev=events(),next=ev[0],late=ev.filter(e=>e.due<today),soon=ev.filter(e=>e.due>=today&&e.due<=plus(today,30));
  const capitalize=s=>s.charAt(0).toUpperCase()+s.slice(1);
@@ -37,7 +86,7 @@ function renderHomeOverview(){
  $('homeStats').innerHTML=[['Po termínu',late.length],['Do 30 dní',soon.length],['Záznamů',state.records.length]].map(([label,count])=>'<div><b>'+count+'</b><small>'+label+'</small></div>').join('');
  $('homeCareCard').classList.toggle('empty',!next);
  $('homeCareCard').classList.toggle('overdue',Boolean(next&&next.due<today));
- $('homeCareButton').disabled=!next;$('homeComplete').hidden=!next;if(next){$('homeComplete').dataset.event=next.planId||next.slug;$('homeComplete').dataset.plan=next.planId?'1':'0'}$('homeCareDetails').hidden=!next;$('homeCareCountdown').hidden=!next;
+ $('homeCareButton').disabled=!next;$('homeComplete').hidden=!next;if(next){$('homeComplete').dataset.complete=next.planId||next.slug;$('homeComplete').dataset.plan=next.planId?'1':'0'}$('homeCareDetails').hidden=!next;$('homeCareCountdown').hidden=!next;
  if(!next){$('homeCareHeading').textContent='Přehled péče';$('careStatus').textContent='Žádné termíny';$('homeCareWeekday').textContent='Novou péči přidáš tlačítkem +.';$('homeCareButton').setAttribute('aria-label','Žádné naplánované termíny');return}
  const date=new Date(next.due+'T12:00:00'),delta=Math.round((Date.parse(next.due+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000),n=Math.abs(delta),days=n===1?'den':n>=2&&n<=4?'dny':'dní';
  $('homeCareHeading').textContent=delta<0?'Péče po termínu':'Další péče';

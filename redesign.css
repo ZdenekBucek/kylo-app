@@ -14,7 +14,20 @@
 #typeOptions>.ui-empty{grid-column:1/-1}
 
 /* Completion controls stay separate from the event detail buttons. */
-.month-entry .complete-care{display:flex;align-items:center;justify-content:center;gap:8px;width:auto;margin:0 0 14px 58px;min-height:44px;padding:10px 14px;font-size:12px}
+.month-entry{position:relative;border-bottom:1px solid var(--kylo-line);padding:3px 0}
+.month-entry:last-child{border-bottom:0}
+#monthRows .month-entry .month-event{margin:0;padding:14px 10px!important}
+#monthRows .month-entry.has-completion .month-event{padding-bottom:68px!important}
+.month-entry .complete-care{position:absolute;left:65px;bottom:15px;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px;width:auto;max-width:calc(100% - 85px);margin:0;min-height:44px;padding:10px 13px;font-size:12px}
+.month-entry .complete-care:focus-visible,.month-event:focus-visible{outline:2px solid #315d42;outline-offset:-2px}
+.care-detail-fields{margin:0 0 18px;font-size:13px}
+.care-detail-fields>div{margin:12px 0}.care-detail-fields dt{color:#7b8b74;margin-bottom:4px}.care-detail-fields dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:#315d42}
 .complete-care svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8}
 .home-care .home-complete{display:block;position:relative;z-index:1;width:calc(100% - 48px);margin:0 24px 20px;background:#e8efdc;color:#315d42;border:0}
 .home-care .home-complete[hidden]{display:none}
+
+/* A session is checked before either the login or private app is shown. */
+.startup{display:flex;min-height:100dvh;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;color:#315d42;background:#f8f5ee}
+.startup[hidden]{display:none}.startup img{border-radius:24px}.startup h1{font-size:34px;margin:18px 0 8px}.startup p{font-size:14px;line-height:1.6;color:#7b8b74;margin:0 0 20px}.startup .secondary{max-width:240px}
+.weight-point{cursor:pointer;outline:none}.weight-point-halo{fill:#315d42;opacity:0;pointer-events:none}.weight-point.selected .weight-point-halo{opacity:.18}.weight-point:focus-visible .weight-point-halo{opacity:.3;stroke:#315d42;stroke-width:2}
+.weight-point-details{padding:10px 12px;margin:0;border-radius:12px;background:#edf3e7;color:#315d42;font-size:13px;line-height:1.5;min-height:40px}

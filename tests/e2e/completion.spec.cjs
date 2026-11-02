@@ -24,3 +24,11 @@ test('failed confirmation keeps the selected date and can be retried without dup
 test('recurring weighing requires a new weight and completion controls fit on mobile',async({page})=>{
  db.plans=[];db.records=db.records.filter(r=>r.slug==='weight');await page.reload();await expect(page.locator('#inside')).toBeVisible();await page.locator('#homeComplete').click();await expect(page.locator('#doneWeight')).toBeVisible();await page.locator('#doneForm .primary').click();expect(db.records).toHaveLength(1);await page.locator('#doneDate').fill('2026-11-02');await page.locator('#doneWeight').fill('7.5');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.locator('#doneForm .primary').click();await expect(page.locator('#careDialog')).not.toBeVisible();expect(db.records[0]).toMatchObject({event_date:'2026-11-02',next_due_on:'2026-12-02',weight_kg:'7.5'});
 });
+
+test('calendar confirmation is inside its item and does not trigger the detail action',async({page})=>{
+ await nav(page,'Kalendář');await page.getByRole('button',{name:'Předchozí měsíc'}).click();
+ const row=page.locator('#monthRows .month-entry').filter({has:page.locator('[data-event="fleas-ticks"]')}),details=row.locator('[data-event]'),confirm=row.locator('.complete-care');
+ const itemBox=await row.boundingBox(),buttonBox=await confirm.boundingBox();expect(buttonBox.x).toBeGreaterThanOrEqual(itemBox.x);expect(buttonBox.y+buttonBox.height).toBeLessThanOrEqual(itemBox.y+itemBox.height);expect(await confirm.evaluate(e=>Boolean(e.closest('button button')))).toBe(false);
+ await details.click();await expect(page.locator('#planDetail')).toBeVisible();await expect(page.locator('#doneForm')).toHaveCount(0);await expect(page.locator('#kyloContext')).toHaveText('DETAIL AKCE');await page.keyboard.press('Escape');
+ await confirm.click();await expect(page.locator('#doneForm')).toBeVisible();await expect(page.locator('#planDetail')).toHaveCount(0);await expect(page.locator('#kyloContext')).toHaveText('PLÁNOVANÁ PÉČE');await expect(page.locator('#doneDate')).toHaveValue('2026-11-02');
+});

@@ -39,7 +39,7 @@ async function invoke(path,action,body={},method='POST'){
    // Open the test occurrence directly, independent of other copied production records.
    await page.locator('nav button').filter({hasText:'Kalendář'}).click();
    await page.evaluate(()=>{view=new Date('2027-01-01T12:00:00');drawCalendar()});
-   await page.locator('#monthRows .complete-care[data-event="'+type.slug+'"]').click();
+   await page.locator('#monthRows .complete-care[data-complete="'+type.slug+'"]').click();
    await page.locator('#doneDate').fill('2027-01-10');await page.screenshot({path:'/tmp/kylo-completion-preview.png'});assert.match(await page.locator('#doneNext').textContent(),/14. února 2027/);await page.locator('#doneForm .primary').click();await page.locator('#careDialog').waitFor({state:'hidden'});await page.reload();await page.locator('#inside').waitFor({state:'visible'});
    const [last]=await db.query('SELECT event_date::text,next_due_on::text FROM care_records WHERE care_type_id=$1 ORDER BY event_date DESC,created_at DESC LIMIT 1',[type.id]);assert.deepEqual(last,{event_date:'2027-01-10',next_due_on:'2027-02-14'});console.log('PASS: browser → actual care API → isolated PostgreSQL → reload.');
   }finally{await browser.close()}

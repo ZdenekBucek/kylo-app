@@ -17,7 +17,7 @@ function drawMonthOverview(){
     const selected=e.due===selectedCalendarDate;
     const target=e.recordId?'data-record="'+esc(e.recordId)+'"':'data-event="'+esc(e.planId||e.slug)+'" data-plan="'+(e.planId?'1':'0')+'"';
     const title=e.product||e.title||e.type_name;
-    return '<div class="month-entry"><button class="care kylo-action month-event '+(selected?'highlighted':'')+'" '+target+' data-calendar-date="'+e.due+'" '+(selected?'aria-current="date"':'')+'><span class="ico">'+uiIcon(e.slug,e.icon)+'</span><span class="grow"><span class="name">'+esc(e.product||e.title||e.type_name)+'</span><span class="sub">'+fmt(e.due)+(e.dose?' · '+esc(e.dose):'')+'</span><span class="row-status '+(e.recordId?'done':e.due<day(new Date())?'overdue':'')+'">'+(e.recordId?'Provedeno':e.due<day(new Date())?'Po termínu':'Plánováno')+'</span></span><span class="row-chevron">'+uiIcon('right')+'</span></button>'+(e.recordId?'':'<button type="button" class="complete-care secondary" '+target+' aria-label="Potvrdit provedení: '+esc(title)+'">'+uiIcon('check')+'Potvrdit provedení</button>')+'</div>';
+    return '<div class="month-entry '+(e.recordId?'':'has-completion')+'"><button class="care kylo-action month-event '+(selected?'highlighted':'')+'" '+target+' data-calendar-date="'+e.due+'" '+(selected?'aria-current="date"':'')+'><span class="ico">'+uiIcon(e.slug,e.icon)+'</span><span class="grow"><span class="name">'+esc(e.product||e.title||e.type_name)+'</span><span class="sub">'+fmt(e.due)+(e.dose?' · '+esc(e.dose):'')+'</span><span class="row-status '+(e.recordId?'done':e.due<day(new Date())?'overdue':'')+'">'+(e.recordId?'Provedeno':e.due<day(new Date())?'Po termínu':'Plánováno')+'</span></span><span class="row-chevron">'+uiIcon('right')+'</span></button>'+(e.recordId?'':'<button type="button" class="complete-care secondary" '+target.replace('data-event=','data-complete=')+' aria-label="Potvrdit provedení: '+esc(title)+'">'+uiIcon('check')+'Potvrdit provedení</button>')+'</div>';
   }).join('')||uiEmpty('Žádné termíny','Vyber den v kalendáři a naplánuj péči.','calendar');
 }
 drawCalendar=function(){
@@ -28,7 +28,6 @@ drawCalendar=function(){
     return '<button class="day '+(ev.some(x=>x.due===d)?'dot ':'')+(isToday?'today ':'')+(selected?'selected':'')+'" '+(isToday?'aria-current="date" ':'')+'aria-label="'+fmt(d)+(isToday?', dnes':'')+'" aria-pressed="'+selected+'" data-date="'+d+'" onclick="showDay(\''+d+'\')">'+(i+1)+'</button>';
   }).join('');
   $('calendarSelection').textContent=selectedCalendarDate?fmt(selectedCalendarDate):'Vyber den v kalendáři';
-  $('calendarPlan').disabled=!selectedCalendarDate;
   drawMonthOverview();
 };
 moveMonth=function(n){view.setMonth(view.getMonth()+n);selectedCalendarDate=null;drawCalendar()};
@@ -45,13 +44,13 @@ function goToToday(){
   const now=new Date();view=new Date(now.getFullYear(),now.getMonth(),1);
   selectedCalendarDate=day(now);drawCalendar();
 }
-function planSelectedDay(){if(selectedCalendarDate)openSheet('plan',selectedCalendarDate)}
+function openAddCare(){const calendar=$('calendar').classList.contains('active');openSheet(calendar?'plan':'record',calendar?selectedCalendarDate:null)}
 function dismissSheet(){
   $('sheet').classList.remove('show');uiSyncScroll();sheetFocus?.focus();
 }
 closeSheet=function(e){if(e.target.id==='sheet')dismissSheet()};
 openSheet=function(mode='record',date=null){
-  if(!$('sheet').classList.contains('show'))sheetFocus=document.activeElement?.matches('button')?document.activeElement:(date?$('calendarPlan'):document.querySelector('.nav .plus'));entryMode=mode;entryDate=date||day(new Date());
+  if(!$('sheet').classList.contains('show'))sheetFocus=document.activeElement?.matches('button')?document.activeElement:document.querySelector('.nav .plus');entryMode=mode;entryDate=date||day(new Date());
   $('sheet').classList.add('show');uiSyncScroll();
   $('recordFields').hidden=true;$('typeOptions').hidden=false;
   $('sheetTitle').textContent=mode==='plan'?'Naplánovat akci':'Přidat péči';
