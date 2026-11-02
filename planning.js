@@ -16,7 +16,8 @@ function drawMonthOverview(){
   $('monthRows').innerHTML=calendarEvents().filter(e=>e.due.startsWith(month)).map(e=>{
     const selected=e.due===selectedCalendarDate;
     const target=e.recordId?'data-record="'+esc(e.recordId)+'"':'data-event="'+esc(e.planId||e.slug)+'" data-plan="'+(e.planId?'1':'0')+'"';
-    return '<button class="care kylo-action month-event '+(selected?'highlighted':'')+'" '+target+' data-calendar-date="'+e.due+'" '+(selected?'aria-current="date"':'')+'><span class="ico">'+uiIcon(e.slug,e.icon)+'</span><span class="grow"><span class="name">'+esc(e.product||e.title||e.type_name)+'</span><span class="sub">'+fmt(e.due)+(e.dose?' · '+esc(e.dose):'')+'</span><span class="row-status '+(e.recordId?'done':e.due<day(new Date())?'overdue':'')+'">'+(e.recordId?'Provedeno':e.due<day(new Date())?'Po termínu':'Plánováno')+'</span></span><span class="row-chevron">'+uiIcon('right')+'</span></button>';
+    const title=e.product||e.title||e.type_name;
+    return '<div class="month-entry"><button class="care kylo-action month-event '+(selected?'highlighted':'')+'" '+target+' data-calendar-date="'+e.due+'" '+(selected?'aria-current="date"':'')+'><span class="ico">'+uiIcon(e.slug,e.icon)+'</span><span class="grow"><span class="name">'+esc(e.product||e.title||e.type_name)+'</span><span class="sub">'+fmt(e.due)+(e.dose?' · '+esc(e.dose):'')+'</span><span class="row-status '+(e.recordId?'done':e.due<day(new Date())?'overdue':'')+'">'+(e.recordId?'Provedeno':e.due<day(new Date())?'Po termínu':'Plánováno')+'</span></span><span class="row-chevron">'+uiIcon('right')+'</span></button>'+(e.recordId?'':'<button type="button" class="complete-care secondary" '+target+' aria-label="Potvrdit provedení: '+esc(title)+'">'+uiIcon('check')+'Potvrdit provedení</button>')+'</div>';
   }).join('')||uiEmpty('Žádné termíny','Vyber den v kalendáři a naplánuj péči.','calendar');
 }
 drawCalendar=function(){

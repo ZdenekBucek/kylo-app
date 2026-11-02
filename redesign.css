@@ -12,3 +12,9 @@
 .ui-sheet-dialog{max-width:430px}
 :is(.screen,.sheet,.ui-dialog) select.input{height:50px;-webkit-appearance:none;appearance:none;padding:0 34px 0 13px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%23758c6d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;background-size:14px}.action-icon{color:#527b4f}
 #typeOptions>.ui-empty{grid-column:1/-1}
+
+/* Completion controls stay separate from the event detail buttons. */
+.month-entry .complete-care{display:flex;align-items:center;justify-content:center;gap:8px;width:auto;margin:0 0 14px 58px;min-height:44px;padding:10px 14px;font-size:12px}
+.complete-care svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8}
+.home-care .home-complete{display:block;position:relative;z-index:1;width:calc(100% - 48px);margin:0 24px 20px;background:#e8efdc;color:#315d42;border:0}
+.home-care .home-complete[hidden]{display:none}

@@ -37,7 +37,7 @@ function renderHomeOverview(){
  $('homeStats').innerHTML=[['Po termínu',late.length],['Do 30 dní',soon.length],['Záznamů',state.records.length]].map(([label,count])=>'<div><b>'+count+'</b><small>'+label+'</small></div>').join('');
  $('homeCareCard').classList.toggle('empty',!next);
  $('homeCareCard').classList.toggle('overdue',Boolean(next&&next.due<today));
- $('homeCareButton').disabled=!next;$('homeCareDetails').hidden=!next;$('homeCareCountdown').hidden=!next;
+ $('homeCareButton').disabled=!next;$('homeComplete').hidden=!next;if(next){$('homeComplete').dataset.event=next.planId||next.slug;$('homeComplete').dataset.plan=next.planId?'1':'0'}$('homeCareDetails').hidden=!next;$('homeCareCountdown').hidden=!next;
  if(!next){$('homeCareHeading').textContent='Přehled péče';$('careStatus').textContent='Žádné termíny';$('homeCareWeekday').textContent='Novou péči přidáš tlačítkem +.';$('homeCareButton').setAttribute('aria-label','Žádné naplánované termíny');return}
  const date=new Date(next.due+'T12:00:00'),delta=Math.round((Date.parse(next.due+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000),n=Math.abs(delta),days=n===1?'den':n>=2&&n<=4?'dny':'dní';
  $('homeCareHeading').textContent=delta<0?'Péče po termínu':'Další péče';

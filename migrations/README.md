@@ -11,3 +11,9 @@ Verification:
 - `scripts/verify-planning-flow.cjs`: requires the same isolated branch and the local server at port 4173. Its browser adapter calls the actual API handlers with an isolated test session, verifies persistence after reload and checks the completed record in PostgreSQL. It never runs automatically against production.
 
 Verified on Neon branch `kylo-planning-2026-10-09` before applying the additive migration to production.
+
+## Completion of recurring care (2026-11-02)
+
+Apply `20261102_care_completion.sql` before releasing the completion UI/API. It adds an optional source record reference with a unique index. Existing history is preserved; duplicate and simultaneous confirmations of the same occurrence cannot create multiple records. Repeated care uses the interval stored by the previous record's dates, even when the action default has changed or the definition was archived.
+
+`node scripts/verify-completion-db.cjs` runs the real API on an isolated test branch (`DATABASE_URL` and `KYLO_TEST_BRANCH_ID`). With `KYLO_BROWSER_VERIFY=1`, installed Chromium and the local E2E server at port 4173, it also verifies the complete browser/API/database/reload flow.

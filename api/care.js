@@ -34,9 +34,23 @@ if(a==='record'&&q.method==='DELETE'){
 if(!uuid(b.id))return send(r,400,{error:'Neplatné ID'});const x=await db.query('DELETE FROM care_records WHERE id=$1 RETURNING id',[b.id]);return send(r,x.length?200:404,x.length?{ok:true}:{error:'Záznam nenalezen'});
 }
 if(a==='complete'&&q.method==='POST'){
-if(!uuid(b.id)||!validDate(b.date))return send(r,400,{error:'Neplatný termín'});
+const recurring=b.sourceRecordId!=null;
+if(!validDate(b.date)||(recurring?(!uuid(b.sourceRecordId)||b.id!=null):!uuid(b.id)))return send(r,400,{error:'Neplatný termín'});
 const weight=b.weight==null||b.weight===''?null:Number(b.weight);
 if(weight!==null&&(!Number.isFinite(weight)||weight<=0||weight>100))return send(r,400,{error:'Neplatná hmotnost'});
+if(recurring){
+const source=await db.query('SELECT t.slug,r.event_date::text FROM care_records r JOIN care_types t ON t.id=r.care_type_id WHERE r.id=$1',[b.sourceRecordId]);
+if(source[0]?.slug==='weight'&&weight===null)return send(r,400,{error:'Vyplň hmotnost'});
+if(source[0]&&b.date<source[0].event_date)return send(r,400,{error:'Datum provedení nesmí být před předchozí péčí'});
+const rows=await db.query(`INSERT INTO care_records(care_type_id,event_date,product,notes,next_due_on,created_by,dose,weight_kg,reminder_offsets,source_record_id)
+ SELECT s.care_type_id,$2::date,COALESCE(NULLIF($3,''),s.product),$4,
+ CASE WHEN s.next_due_on>s.event_date THEN $2::date+(s.next_due_on-s.event_date) ELSE NULL END,
+ $5,COALESCE($6,s.dose),$7,s.reminder_offsets,s.id
+ FROM care_records s WHERE s.id=$1 AND s.next_due_on IS NOT NULL AND $2::date>=s.event_date
+ AND s.id=(SELECT latest.id FROM care_records latest WHERE latest.care_type_id=s.care_type_id ORDER BY latest.event_date DESC,latest.created_at DESC LIMIT 1)
+ ON CONFLICT(source_record_id) DO NOTHING RETURNING id,next_due_on::text`,[b.sourceRecordId,b.date,String(b.product||'').slice(0,200),String(b.notes||'').slice(0,2000),user.id,b.dose==null?null:String(b.dose).slice(0,200),weight]);
+return send(r,rows.length?200:409,rows.length?{ok:true,nextDue:rows[0].next_due_on}:{error:'Termín již není aktivní. Obnov přehled péče.'});
+}
 const plannedType=await db.query("SELECT t.slug FROM planned_events p JOIN care_types t ON t.id=p.care_type_id WHERE p.id=$1 AND p.status='planned'",[b.id]);
 if(plannedType[0]?.slug==='weight'&&weight===null)return send(r,400,{error:'Vyplň hmotnost'});
 const x=await db.query("WITH source AS (SELECT p.id,p.title,p.care_type_id,p.dose,p.reminder_offsets,COALESCE(p.interval_days,t.default_interval_days) AS default_interval_days FROM planned_events p LEFT JOIN care_types t ON t.id=p.care_type_id WHERE p.id=$1 AND p.status='planned' FOR UPDATE OF p), record AS (INSERT INTO care_records(care_type_id,event_date,product,notes,next_due_on,created_by,dose,weight_kg,reminder_offsets) SELECT COALESCE(s.care_type_id,(SELECT id FROM care_types WHERE slug='other')),$2::date,COALESCE(NULLIF($3,''),s.title),$4,CASE WHEN COALESCE(s.default_interval_days,0)=0 THEN NULL ELSE $2::date+s.default_interval_days END,$5,COALESCE($6,s.dose),$7,s.reminder_offsets FROM source s RETURNING id), updated AS (UPDATE planned_events p SET status='completed',completed_record_id=r.id FROM source s CROSS JOIN record r WHERE p.id=s.id RETURNING p.id) SELECT (SELECT id FROM updated) AS done",[b.id,b.date,String(b.product||'').slice(0,200),String(b.notes||'').slice(0,2000),user.id,b.dose==null?null:String(b.dose).slice(0,200),weight]);

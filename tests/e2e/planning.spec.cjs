@@ -11,8 +11,8 @@ test('custom action is saved, planned on selected day and completed with recurre
  await page.locator('#recordForm button[type="submit"]').click();await expect(page.locator('#sheet')).not.toBeVisible();
  const selected=page.locator('#monthRows .highlighted');await expect(selected).toHaveCount(1);await expect(selected).toContainText('Péče o srst');await expect(page.locator('#monthRows')).toContainText('Frontline');
  await page.reload();await expect(page.locator('#inside')).toBeVisible();await nav(page,'Kalendář');await page.locator('[data-date="2026-10-20"]').click();await expect(page.locator('#monthRows .highlighted')).toContainText('Péče o srst');
- await page.locator('#monthRows .highlighted').click();await page.locator('#doneDate').fill('2026-10-20');await page.locator('#doneForm .primary').click();await expect(page.locator('#doneForm')).not.toBeVisible();
- expect(db.records[0]).toMatchObject({dose:'2 kapky',next_due_on:'2026-11-10',reminder_offsets:[5,0]});
+ await page.locator('#monthRows .highlighted').click();await page.locator('#doneDate').fill('2026-10-23');await expect(page.locator('#doneNext')).toContainText('13. listopadu 2026');await page.locator('#doneForm .primary').click();await expect(page.locator('#doneForm')).not.toBeVisible();
+ expect(db.records[0]).toMatchObject({dose:'2 kapky',event_date:'2026-10-23',next_due_on:'2026-11-13',reminder_offsets:[5,0]});
  await nav(page,'Historie');await expect(page.locator('#historyRows [data-record]').first()).toContainText('Péče o srst');
 });
 test('selected day highlights the monthly entry without a duplicate details card',async({page})=>{
