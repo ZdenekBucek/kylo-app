@@ -2,6 +2,7 @@
 (() => {
   const editor = $('docEditor');
   const viewer = $('docViewer');
+  const actions = $('docActions');
   let sourceButton, sourceNav, folder, listing, draft, preview;
   let listRequest = 0;
   const sizeLabel = bytes => bytes < 1024 * 1024
@@ -35,7 +36,7 @@
         : '<button type="button" data-folder="' + esc(item.id) + '">' + esc(item.name) + '</button><span aria-hidden="true">›</span>'
     ).join('');
     const entries = [];
-    const row = (icon, attr, item, sub) => '<button type="button" class="doc-entry" data-' + attr + '="' + esc(item.id) + '">'
+    const row = (icon, attr, item, sub) => '<button type="button" class="doc-entry" aria-haspopup="dialog" data-' + attr + '="' + esc(item.id) + '">'
       + '<span class="ico">' + uiIcon(icon) + '</span><span class="doc-copy"><strong>' + esc(item.name) + '</strong>'
       + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span><span class="row-chevron">' + uiIcon('right') + '</span></button>';
     for (const item of listing.folders.filter(item => item.parent_id === folder)) entries.push(row('folder', 'folder', item, ''));
@@ -90,17 +91,96 @@
     if (file) openFile(file, entry);
   });
 
-  for (const dialog of [editor, viewer]) {
+  const entries = $('docEntries');
+  let selection, press, suppressClick = false;
+  function showActions(entry) {
+    if (!entry || !listing || actions.open) return;
+    const kind = entry.dataset.folder ? 'folder' : 'file';
+    const items = kind === 'folder' ? listing.folders : listing.files;
+    const item = items.find(row => row.id === entry.dataset[kind]);
+    if (!item) return;
+    selection = {kind, item, entry};
+    $('docActionsTitle').textContent = item.name;
+    $('docActionStatus').textContent = '';
+    uiOpenDialog(actions, entry);
+  }
+  function clearPress() {
+    if (press) clearTimeout(press.timer);
+    press = null;
+  }
+  document.addEventListener('pointerdown', () => { clearPress(); suppressClick = false; }, true);
+  entries.addEventListener('pointerdown', e => {
+    const entry = e.target.closest('.doc-entry');
+    if (!entry || !e.isPrimary || e.pointerType === 'mouse' || e.button !== 0) return;
+    press = {x: e.clientX, y: e.clientY, id: e.pointerId, timer: setTimeout(() => {
+      if (!entry.isConnected) return;
+      suppressClick = true;
+      showActions(entry);
+    }, 550)};
+  });
+  document.addEventListener('pointermove', e => {
+    if (press && e.pointerId === press.id && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 10) clearPress();
+  });
+  for (const event of ['pointerup','pointercancel']) document.addEventListener(event, clearPress, true);
+  window.addEventListener('blur', clearPress);
+  entries.addEventListener('contextmenu', e => {
+    const entry = e.target.closest('.doc-entry');
+    if (!entry) return;
+    e.preventDefault();
+    clearPress();
+    suppressClick = true;
+    showActions(entry);
+  });
+  entries.addEventListener('keydown', e => {
+    if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+      e.preventDefault();
+      showActions(e.target.closest('.doc-entry'));
+    }
+  });
+  document.addEventListener('click', e => {
+    if (suppressClick && e.detail !== 0) {
+      suppressClick = false;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
+  $('docEditItem').onclick = () => {
+    uiCloseDialog(actions);
+    edit(null, selection.entry, selection);
+  };
+  $('docDeleteItem').onclick = async () => {
+    const {kind, item} = selection;
+    const title = kind === 'folder' ? 'Smazat složku?' : 'Smazat soubor?';
+    const message = 'Opravdu chceš smazat „' + item.name + '“?';
+    if (!await askConfirmation({title, message, accept: 'Smazat', cancel: 'Zrušit', opener: $('docDeleteItem')})) return;
+    uiDialogBusy(actions, true);
+    let deleted = false;
+    try {
+      await save('delete', {id: item.id, kind});
+      deleted = true;
+    } catch (e) {
+      $('docActionStatus').textContent = e.message;
+    } finally {
+      uiDialogBusy(actions, false);
+    }
+    if (deleted) {
+      uiCloseDialog(actions);
+      await loadFolder(folder);
+      $('docHeading').focus({preventScroll: true});
+    }
+  };
+
+  for (const dialog of [editor, viewer, actions]) {
     uiBindDialog(dialog);
     dialog.querySelector('[data-doc-close]').onclick = () => uiCloseDialog(dialog);
   }
-  function edit(file, opener) {
+  function edit(file, opener, existing) {
     if (!listing) return;
     if (file && (!file.size || file.size > listing.maxBytes)) {
       $('docStatus').textContent = 'Vyber neprázdný soubor do ' + sizeLabel(listing.maxBytes) + '.';
       return;
     }
-    draft = {id: crypto.randomUUID(), folder, file};
+    draft = {id: existing?.item.id ?? crypto.randomUUID(), folder, file, existing};
     $('docForm').reset();
     $('docFormStatus').textContent = '';
     $('docEditorTitle').textContent = file ? 'Nový dokument' : 'Nová složka';
@@ -108,6 +188,15 @@
     $('docSource').textContent = file ? file.name + ' · ' + sizeLabel(file.size) : '';
     $('docName').value = file ? (file.name.replace(/\.[^.]+$/, '') || file.name).slice(0, 160) : '';
     $('docSave').textContent = file ? 'Uložit dokument' : 'Vytvořit složku';
+    if (existing) {
+      const isFolder = existing.kind === 'folder';
+      $('docEditorTitle').textContent = isFolder ? 'Editovat složku' : 'Editovat soubor';
+      $('docDescLabel').hidden = isFolder;
+      $('docName').value = existing.item.name;
+      $('docDesc').value = existing.item.description || '';
+      $('docSource').textContent = existing.item.original_name || '';
+      $('docSave').textContent = 'Uložit změny';
+    }
     uiOpenDialog(editor, opener);
     $('docName').focus();
   }
@@ -151,7 +240,8 @@
     uiDialogBusy(editor, true);
     $('docFormStatus').textContent = 'Ukládám…';
     try {
-      if (draft.file) await upload(draft, name);
+      if (draft.existing) await save('edit', {kind: draft.existing.kind, id: draft.id, name, description: $('docDesc').value});
+      else if (draft.file) await upload(draft, name);
       else await save('folder', {id: draft.id, folder: draft.folder, name});
     } catch (e) {
       $('docFormStatus').textContent = e.message;

@@ -127,3 +127,50 @@ test('interrupted multipart upload resumes and unsupported formats retain the or
   await page.locator('#docDownload').click();
   expect(readFileSync(await (await download).path())).toEqual(contents);
 });
+
+test('hold to edit, confirm deletion and protect a nonempty folder', async ({page}) => {
+  await folder(page, 'Veterina');
+  await choose(page, 'Ze Souborů', {name:'test.txt', mimeType:'text/plain', buffer:Buffer.from('Originál')});
+  await page.getByRole('button', {name:'Uložit dokument'}).click();
+  const file = page.locator('.doc-entry[data-file]');
+  await expect(file).toBeVisible();
+  await file.dispatchEvent('pointerdown', {pointerType:'touch', pointerId:7, isPrimary:true, button:0});
+  await expect(page.locator('#docActions')).toBeVisible();
+  await file.dispatchEvent('pointerup', {pointerType:'touch', pointerId:7});
+  await file.dispatchEvent('click', {detail:1});
+  await expect(page.locator('#docViewer')).not.toBeVisible();
+  await page.locator('#docEditItem').click();
+  await page.locator('#docName').fill('Zpráva');
+  await page.locator('#docDesc').fill('Kontrola');
+  await page.locator('#docSave').click();
+  await expect(file).toContainText('Zpráva');
+  await file.click();
+  await expect(page.locator('#docViewerDesc')).toHaveText('Kontrola');
+  await expect(page.locator('#docPreview')).toHaveText('Originál');
+  await page.locator('#docViewer [data-doc-close]').click();
+  const root = () => page.locator('#docPath [data-folder=""]').click();
+  const dir = page.locator('.doc-entry[data-folder]');
+  async function remove(row, confirm) {
+    await row.click({button:'right'});
+    await page.locator('#docDeleteItem').click();
+    await page.locator(confirm ? '#confirmAccept' : '#confirmCancel').click();
+  }
+  await root();
+  await dir.press('Shift+F10');
+  await page.locator('#docEditItem').click();
+  await page.locator('#docName').fill('Záznamy');
+  await page.locator('#docSave').click();
+  await expect(dir).toHaveText('Záznamy');
+  await remove(dir, true);
+  await expect(page.locator('#docActionStatus')).toContainText('není prázdná');
+  await page.locator('#docActions [data-doc-close]').click();
+  await dir.click();
+  await remove(file, false);
+  await page.locator('#docActions [data-doc-close]').click();
+  await expect(file).toBeVisible();
+  await remove(file, true);
+  await expect(page.locator('#docEntries')).toContainText('prázdná');
+  await root();
+  await remove(dir, true);
+  await expect(page.locator('#docEntries')).toContainText('prázdná');
+});

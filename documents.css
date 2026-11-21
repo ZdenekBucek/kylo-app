@@ -39,3 +39,7 @@
 .doc-pages {display:flex;align-items:center;justify-content:space-between;gap:10px}
 .doc-pages button {min-height:44px;width:auto;margin:0}
 .doc-empty {margin:0;color:var(--kylo-sage);text-align:center;font-size:14px;padding:27px 12px;background:#fff;border-radius:20px}
+.doc-entry {touch-action:pan-y pinch-zoom;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#docActions h2 {overflow-wrap:anywhere}
+#docActions button {width:100%;margin:5px 0}
+#docActionStatus:empty {display:none}
