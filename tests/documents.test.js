@@ -71,3 +71,24 @@ test('invalid file metadata and malformed chunks are rejected', async () => {
   }
   assert.equal((await db.call('part', {body: {id, part: 0, data: '!!!'}})).code, 400);
 });
+
+test('empty-only deletion protects subfolders and pending uploads; edits and deletes require a session', async () => {
+  const parent = randomUUID(), child = randomUUID(), file = randomUUID();
+  const post = (action, body, cookie) => db.call(action, {body, cookie});
+  const remove = (kind, id) => post('delete', {kind, id});
+  await post('folder', {id: parent, name: 'Pro odstranění'});
+  await post('folder', {id: child, folder: parent, name: 'Podsložka'});
+  assert.equal((await remove('folder', parent)).code, 409);
+  assert.equal((await post('delete', {kind:'folder', id:child}, '')).code, 401);
+  assert.equal((await post('edit', {kind:'folder', id:child, name:'Změna'}, '')).code, 401);
+  assert.equal((await remove('folder', child)).code, 200);
+  await post('start', {id:file, folder:parent, name:'Soubor', description:'', originalName:'a.txt', size:1});
+  assert.equal((await remove('folder', parent)).code, 409);
+  assert.equal((await remove('file', file)).code, 404);
+  await post('part', {id:file, part:0, data:'YQ=='});
+  await post('finish', {id:file});
+  assert.equal((await post('edit', {kind:'file', id:file, name:' ', description:''})).code, 400);
+  assert.equal((await remove('file', file)).code, 200);
+  assert.equal((await db.call('part', {params:{id:file,part:'0'}})).code, 404);
+  assert.equal((await remove('folder', parent)).code, 200);
+});
