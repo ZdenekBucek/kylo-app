@@ -26,7 +26,7 @@ test('folders can nest, repeat names in different branches and retry creation', 
   assert.equal(all.find(item => item.id === sub).parent_id, folder);
   assert.equal((await make(randomUUID(), 'Chybí', randomUUID())).code, 404);
   const cycle = randomUUID();
-  assert.equal((await make(cycle, 'Smyčka', cycle)).code, 400);
+  assert.equal((await make(cycle, 'Smyčka', cycle.toUpperCase())).code, 400);
 });
 
 test('multipart upload stays private until complete, retries and reads exact original bytes', async () => {
@@ -46,6 +46,7 @@ test('multipart upload stays private until complete, retries and reads exact ori
   assert.equal((await db.call('list')).body.files.some(f => f.id === id), false);
   assert.deepEqual((await post('start', metadata)).body.parts, [1]);
   assert.equal((await part(1, last)).code, 200);
+  assert.equal((await part(1, Buffer.from([5, 6, 7]))).code, 409);
   assert.equal((await part(0, first)).code, 200);
   assert.equal((await post('finish', {}, db.cookies[1])).code, 409);
   assert.equal((await post('finish', {})).code, 200);

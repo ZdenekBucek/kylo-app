@@ -1,6 +1,6 @@
 CREATE TABLE document_folders (
   id uuid PRIMARY KEY,
-  parent_id uuid REFERENCES document_folders(id),
+  parent_id uuid REFERENCES document_folders(id) CHECK (parent_id IS DISTINCT FROM id),
   name text NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 160)
 );
 CREATE UNIQUE INDEX document_folder_siblings ON document_folders (parent_id, lower(name)) NULLS NOT DISTINCT;
