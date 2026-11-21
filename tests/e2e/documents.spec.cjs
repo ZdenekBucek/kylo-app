@@ -56,6 +56,12 @@ test('nested folders, named text document, reload, breadcrumb navigation and pro
   for (const name of ['Veterina','Listopad','Kontrola u veterináře']) await page.locator('#docEntries').getByRole('button', {name: new RegExp(name)}).click();
   await expect(page.locator('#docPreview pre')).toHaveText('Výsledek kontroly.\nBez nálezu.');
   await expect(page.locator('#docViewerDesc')).toHaveText('Listopadová návštěva');
+  if (test.info().project.name === 'desktop-chromium') {
+    const close = page.locator('#docViewer').getByRole('button', {name: 'Zavřít'});
+    await close.focus();
+    await close.press('Tab');
+    await expect(page.getByRole('link', {name: 'Stáhnout originál'})).toBeFocused();
+  }
   const download = page.waitForEvent('download');
   await page.getByRole('link', {name: 'Stáhnout originál'}).click();
   const original = await download;
