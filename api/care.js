@@ -1,14 +1,13 @@
 const {date:strictDate,settings,uuid}=require('../lib/planning');
-const{neon}=require('@neondatabase/serverless');const{createHash}=require('node:crypto');
+const{neon}=require('@neondatabase/serverless');const activeSession=require('../lib/active-session');
 const send=(r,s,x)=>r.status(s).setHeader('Cache-Control','no-store').json(x),validDate=strictDate;
 module.exports=async(q,r)=>{try{
 if(!['GET','POST','PUT','DELETE'].includes(q.method))return send(r,405,{error:'Nepodporovaná metoda'});
 if(q.method!=='GET'&&(q.headers['sec-fetch-site']==='cross-site'||q.headers.origin&&new URL(q.headers.origin).host!==q.headers.host))return send(r,403,{error:'Nepovolený požadavek'});
 if(q.method!=='GET'&&!String(q.headers['content-type']||'').startsWith('application/json'))return send(r,415,{error:'Požadován JSON'});
-const db=neon(process.env.DATABASE_URL),t=(q.headers.cookie||'').match(/(?:^|;\s*)kylo_session=([a-f0-9]{64})/)?.[1];
-const users=t?await db.query('SELECT u.id,u.role FROM user_sessions s JOIN app_users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now() AND u.is_active=true',[createHash('sha256').update(t).digest('hex')]):[];
-if(!users.length)return send(r,401,{error:'Přihlas se'});
-const user=users[0],a=q.query.action,b=q.body||{};
+const db=neon(process.env.DATABASE_URL),user=await activeSession(db,q);
+if(!user)return send(r,401,{error:'Přihlas se'});
+const a=q.query.action,b=q.body||{};
 if(Buffer.byteLength(JSON.stringify(b))>32768)return send(r,413,{error:'Příliš velký požadavek'});
 if(a==='plan'&&q.method==='POST'){
 if(!validDate(b.date)||!uuid(b.careTypeId))return send(r,400,{error:'Neplatné datum nebo akce'});

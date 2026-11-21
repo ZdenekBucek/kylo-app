@@ -1,5 +1,10 @@
 // Shared visual primitives and accessible confirmation dialogs.
 const uiPaths={
+ folder:'<path d="M3 8V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/>',
+ folderPlus:'<path d="M3 8V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8zM12 10v7m-3.5-3.5h7"/>',
+ file:'<path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6m-6 4h6"/>',
+ upload:'<path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/>',
+ camera:'<path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="3.5"/>',
  home:'<path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3z"/>',history:'<path d="M7 5h14M7 12h14M7 19h14M3 5h.1M3 12h.1M3 19h.1"/>',calendar:'<rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4m8-4v4M4 10h16"/>',user:'<circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2z"/>',weight:'<path d="M7 7h10l4 14H3z"/><circle cx="12" cy="5" r="3"/>',vaccination:'<path d="M8 4l12 12m-8-6-6 6 4 4 6-6m-1-9 4 4m-1-3 2-2m-9 11-4 4"/>',deworming:'<path d="m8 15 7-7m-9 9a5 5 0 0 1 0-7l4-4a5 5 0 0 1 7 7l-4 4a5 5 0 0 1-7 0z"/>','fleas-ticks':'<ellipse cx="12" cy="13" rx="4" ry="6"/><path d="m9 7-2-3m8 3 2-3M8 10 4 8m4 5H3m5 3-4 3m12-9 4-2m-4 5h5m-5 3 4 3M12 7v12"/>','vet-check':'<path d="M12 21S2 14 2 7a5 5 0 0 1 10-1A5 5 0 0 1 22 7c0 7-10 14-10 14z"/>',other:'<ellipse cx="12" cy="16" rx="6" ry="5"/><ellipse cx="5" cy="8" rx="2" ry="3"/><ellipse cx="11" cy="5" rx="2" ry="3"/><ellipse cx="17" cy="7" rx="2" ry="3"/>',trash:'<path d="M3 6h18m-15 0 1 15h10l1-15M9 6V3h6v3m-5 4v7m4-7v7"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',left:'<path d="m14 5-7 7 7 7"/>',right:'<path d="m10 5 7 7-7 7"/>',check:'<path d="m5 12 4 4L19 6"/>'
 };
 function uiIcon(name,fallback){return Object.hasOwn(uiPaths,name)?'<svg viewBox="0 0 24 24" aria-hidden="true">'+uiPaths[name]+'</svg>':fallback&&fallback!=='🐾'?'<span class="custom-care-icon">'+esc(fallback)+'</span>':'<svg viewBox="0 0 24 24" aria-hidden="true">'+uiPaths.other+'</svg>'}

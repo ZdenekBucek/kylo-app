@@ -1,0 +1,41 @@
+.doc-shortcut,.doc-back,.doc-list-heading button,#docPath button,.doc-entry {
+  display:flex;align-items:center;gap:10px;color:var(--kylo-green);font:inherit;cursor:pointer;
+  background:none;border:0;text-align:left;
+}
+.doc-shortcut {width:100%;background:white;border-radius:20px;padding:13px 15px;margin:12px 0;font-size:15px;font-weight:700;box-shadow:0 4px 17px #29362007}
+.doc-shortcut .row-chevron {margin-left:auto}
+#documents svg,.doc-viewer button svg,#docEditor button svg {width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
+.doc-back {min-height:44px;padding:0 4px 0 0;font-size:14px}
+#docHeading {outline:none}
+#docPath {display:flex;flex-wrap:wrap;align-items:center;gap:0 4px;margin:-12px 0 13px;font-size:13px;color:#65755e}
+#docPath button,#docPath [aria-current] {min-height:40px;padding:8px 4px;max-width:100%;overflow-wrap:anywhere}
+#docPath [aria-current] {font-weight:650;align-content:center}
+.doc-tools {display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.doc-tools button {display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:0}
+.doc-list-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin:19px 0 4px}
+.doc-list-heading h2 {font-size:18px;margin:0}
+.doc-list-heading button {min-height:44px;padding:5px 4px;font-weight:650;font-size:13px}
+.doc-list {background:white;border-radius:20px;padding:0 13px;box-shadow:0 4px 17px #29362007}
+.doc-entry {width:100%;min-height:66px;padding:10px 0;border-bottom:1px solid var(--kylo-line)}
+.doc-entry:last-child {border:0}
+.doc-entry .ico {flex:none}
+.doc-entry .doc-copy {flex:1;min-width:0;overflow-wrap:anywhere;line-height:1.4}
+.doc-entry strong,.doc-entry small {display:block}
+.doc-entry strong {font-size:14px;color:var(--kylo-ink)}
+.doc-entry small {font-size:12px;color:#66755e}
+.doc-entry .row-chevron svg {width:15px}
+#docEditor label[hidden],#documents [hidden],#docViewer [hidden] {display:none}
+#docSource,#docViewerMeta,#docViewerDesc,#docViewerTitle,#docEditorTitle {overflow-wrap:anywhere}
+#docDesc {resize:vertical}
+#docSource:empty,#docViewerDesc:empty,#docStatus:empty,#docViewerStatus:empty {display:none}
+.doc-viewer {width:min(680px,calc(100% - 16px));border-radius:22px;padding:18px}
+.doc-viewer .sheet-heading h2,#docEditor .sheet-heading h2 {flex:1;min-width:0;margin:0}
+.doc-viewer .sheet-close,#docEditor .sheet-close {flex:none}
+#docViewerDesc {white-space:pre-wrap;font-size:14px}
+#docPreview img,#docPreview canvas {display:block;max-width:100%;height:auto;margin:12px auto}
+#docPreview img {max-height:62dvh;object-fit:contain}
+#docPreview pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:55dvh;overflow:auto;background:white;padding:12px}
+#docDownload {display:block;text-align:center;text-decoration:none;margin-top:14px}
+.doc-pages {display:flex;align-items:center;justify-content:space-between;gap:10px}
+.doc-pages button {min-height:44px;width:auto;margin:0}
+.doc-empty {margin:0;color:var(--kylo-sage);text-align:center;font-size:14px;padding:27px 12px;background:#fff;border-radius:20px}
